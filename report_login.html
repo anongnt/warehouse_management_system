@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report - Login System | Warehouse Management System</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.8; color: #333; background: #f5f7fa; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 40px 20px; }
+        h1 { text-align: center; color: #1a56db; margin-bottom: 10px; font-size: 2em; }
+        h2 { color: #1a56db; border-bottom: 2px solid #1a56db; padding-bottom: 8px; margin: 30px 0 15px; }
+        h3 { color: #374151; margin: 20px 0 10px; }
+        .subtitle { text-align: center; color: #6b7280; margin-bottom: 40px; }
+        .card { background: #fff; border-radius: 12px; padding: 30px; margin-bottom: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+        .code-block { background: #1e293b; color: #e2e8f0; padding: 20px; border-radius: 8px; overflow-x: auto; font-family: 'Consolas', monospace; font-size: 13px; margin: 15px 0; white-space: pre; }
+        .highlight { color: #7dd3fc; }
+        .string { color: #86efac; }
+        .comment { color: #94a3b8; font-style: italic; }
+        .keyword { color: #c4b5fd; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th, td { padding: 12px 15px; text-align: left; border: 1px solid #e5e7eb; }
+        th { background: #1a56db; color: white; }
+        tr:nth-child(even) { background: #f9fafb; }
+        .flow-diagram { text-align: center; padding: 20px; }
+        .flow-box { display: inline-block; background: #dbeafe; border: 2px solid #1a56db; border-radius: 10px; padding: 12px 20px; margin: 8px; font-weight: bold; color: #1e40af; min-width: 160px; }
+        .flow-arrow { display: inline-block; font-size: 24px; color: #1a56db; margin: 8px 5px; vertical-align: middle; }
+        .flow-decision { display: inline-block; background: #fef3c7; border: 2px solid #d97706; border-radius: 10px; padding: 12px 20px; margin: 8px; font-weight: bold; color: #92400e; transform: rotate(0deg); min-width: 160px; }
+        .flow-error { display: inline-block; background: #fee2e2; border: 2px solid #dc2626; border-radius: 10px; padding: 12px 20px; margin: 8px; font-weight: bold; color: #991b1b; min-width: 160px; }
+        .flow-success { display: inline-block; background: #d1fae5; border: 2px solid #059669; border-radius: 10px; padding: 12px 20px; margin: 8px; font-weight: bold; color: #065f46; min-width: 160px; }
+        .flow-row { margin: 10px 0; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; }
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        .badge-post { background: #dbeafe; color: #1e40af; }
+        .badge-frontend { background: #d1fae5; color: #065f46; }
+        .badge-backend { background: #fef3c7; color: #92400e; }
+        .section-number { display: inline-block; background: #1a56db; color: white; width: 30px; height: 30px; border-radius: 50%; text-align: center; line-height: 30px; margin-right: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>📋 Report: ระบบ Login</h1>
+    <p class="subtitle">Warehouse Management System — รายงานอธิบายโค้ดและ Flow การทำงาน</p>
+
+    <!-- Section 1: Overview -->
+    <div class="card">
+        <h2><span class="section-number">1</span>ภาพรวมของระบบ Login</h2>
+        <p>ระบบ Login ของ Warehouse Management System เป็นระบบ Authentication แบบ <strong>JWT (JSON Web Token)</strong> ที่ทำงานแบบ Client-Server Architecture โดยแบ่งเป็น:</p>
+        <table>
+            <tr><th>Layer</th><th>เทคโนโลยี</th><th>หน้าที่</th></tr>
+            <tr><td>Frontend</td><td>React + TypeScript + Tailwind CSS</td><td>แสดง UI ฟอร์ม Login, จัดการ State, เรียก API</td></tr>
+            <tr><td>Backend API</td><td>Express.js + TypeScript</td><td>รับ Request, ตรวจสอบข้อมูล, ประมวลผล</td></tr>
+            <tr><td>Service Layer</td><td>TypeScript + bcrypt + JWT</td><td>Business Logic: ตรวจรหัสผ่าน, สร้าง Token, จัดการ Session</td></tr>
+            <tr><td>Database</td><td>SQL Server (MSSQL)</td><td>เก็บข้อมูล User, Session, Failed Attempts</td></tr>
+        </table>
+    </div>
+
+    <!-- Section 2: Flow Diagram -->
+    <div class="card">
+        <h2><span class="section-number">2</span>Flow Diagram: การทำงานของระบบ Login</h2>
+        
+        <h3>2.1 Main Login Flow</h3>
+        <div class="flow-diagram">
+            <div class="flow-row">
+                <div class="flow-box">👤 ผู้ใช้กรอก Email + Password</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-box">📤 Frontend ส่ง POST /api/auth/login</div>
+            </div>
+            <div class="flow-row">
+                <div class="flow-arrow">↓</div>
+            </div>
+            <div class="flow-row">
+                <div class="flow-box">🔍 Validator ตรวจ Input</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-decision">❓ Input ถูกต้อง?</div>
+            </div>
+            <div class="flow-row">
+                <div class="flow-arrow">↓ ✓ ถูกต้อง</div>
+                <div style="width:80px"></div>
+                <div class="flow-arrow">→ ✗</div>
+                <div class="flow-error">❌ 400 Validation Error</div>
+            </div>
+            <div class="flow-row">
+                <div class="flow-box">🗄️ ค้นหา User จาก DB (by email)</div>
+            </div>
+            <div class="flow-row">
+                <div class="flow-arrow">↓</div>
+            </div>
+            <div class="flow-row">
+                <div class="flow-decision">❓ พบ User?</div>
+                <div class="flow-arrow">→ ✗</div>
+                <div class="flow-error">❌ 401 อีเมลหรือรหัสผ่านไม่ถูกต้อง</div>
+            </div>
+            <div class="flow-row">
+                <div class="flow-arrow">↓ ✓ พบ</div>
+            </div>
+            <div class="flow-row">
+                <div class="flow-decision">❓ บัญชีถูก Suspend?</div>
+                <div class="flow-arrow">→ ✓</div>
+                <div class="flow-error">❌ 401 บัญชีถูกระงับ</div>
+            </div>
+            <div class="flow-row">
+                <div class="flow-arrow">↓ ✗</div>
+            </div>
+            <div class="flow-row">
+                <div class="flow-decision">❓ บัญชีถูก Lock?</div>
+                <div class="flow-arrow">→ ✓ ยังไม่หมดเวลา</div>
+                <div class="flow-error">❌ 423 Account Locked</div>
+            </div>
+            <div class="flow-row">
+                <div class="flow-arrow">↓ ✗ / หมดเวลาแล้ว</div>
+            </div>
+            <div class="flow-row">
+                <div class="flow-box">🔐 เปรียบเทียบ Password (bcrypt)</div>
+            </div>
+            <div class="flow-row">
+                <div class="flow-arrow">↓</div>
+            </div>
+            <div class="flow-row">
+                <div class="flow-decision">❓ Password ถูกต้อง?</div>
+            </div>
+            <div class="flow-row">
+                <div class="flow-arrow">↓ ✓ ถูกต้อง</div>
+                <div style="width:80px"></div>
+                <div class="flow-arrow">→ ✗</div>
+                <div class="flow-error">❌ เพิ่ม Failed Attempts<br>(ถ้าครบ 5 ครั้ง → Lock 15 นาที)</div>
+            </div>
+            <div class="flow-row">
+                <div class="flow-box">✅ Reset Failed Attempts = 0</div>
+            </div>
+            <div class="flow-row">
+                <div class="flow-arrow">↓</div>
+            </div>
+            <div class="flow-row">
+                <div class="flow-box">🎫 สร้าง JWT Token + Session</div>
+            </div>
+            <div class="flow-row">
+                <div class="flow-arrow">↓</div>
+            </div>
+            <div class="flow-row">
+                <div class="flow-success">✅ 200 ส่ง Token + User Data กลับ</div>
+            </div>
+            <div class="flow-row">
+                <div class="flow-arrow">↓</div>
+            </div>
+            <div class="flow-row">
+                <div class="flow-success">💾 Frontend เก็บ Token ใน localStorage<br>→ Navigate ไปหน้า Dashboard</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 3: Frontend Code Explanation -->
+    <div class="card">
+        <h2><span class="section-number">3</span>อธิบายโค้ด Frontend (LoginPage.tsx)</h2>
+        
+        <h3>3.1 ไฟล์ที่เกี่ยวข้อง</h3>
+        <table>
+            <tr><th>ไฟล์</th><th>หน้าที่</th></tr>
+            <tr><td><code>src/pages/LoginPage.tsx</code></td><td>หน้า UI ฟอร์ม Login</td></tr>
+            <tr><td><code>src/contexts/AuthContext.tsx</code></td><td>จัดการ State ของ Authentication (login, logout, token)</td></tr>
+        </table>
+
+        <h3>3.2 LoginPage.tsx — State Management</h3>
+        <div class="code-block"><span class="keyword">const</span> [email, setEmail] = <span class="highlight">useState</span>(<span class="string">''</span>);        <span class="comment">// เก็บค่า email ที่กรอก</span>
+<span class="keyword">const</span> [password, setPassword] = <span class="highlight">useState</span>(<span class="string">''</span>);     <span class="comment">// เก็บค่า password ที่กรอก</span>
+<span class="keyword">const</span> [showPassword, setShowPassword] = <span class="highlight">useState</span>(<span class="keyword">false</span>); <span class="comment">// toggle แสดง/ซ่อนรหัสผ่าน</span>
+<span class="keyword">const</span> [error, setError] = <span class="highlight">useState</span>(<span class="string">''</span>);          <span class="comment">// เก็บ error message</span>
+<span class="keyword">const</span> [isLoading, setIsLoading] = <span class="highlight">useState</span>(<span class="keyword">false</span>); <span class="comment">// สถานะ loading</span>
+<span class="keyword">const</span> { login } = <span class="highlight">useAuth</span>();                    <span class="comment">// ดึง function login จาก Context</span>
+<span class="keyword">const</span> navigate = <span class="highlight">useNavigate</span>();                  <span class="comment">// สำหรับ redirect หน้า</span></div>
+
+        <h3>3.3 LoginPage.tsx — handleSubmit (เมื่อกดปุ่ม Login)</h3>
+        <div class="code-block"><span class="keyword">const</span> handleSubmit = <span class="keyword">async</span> (e: FormEvent) => {
+  e.preventDefault();        <span class="comment">// ป้องกัน form reload หน้า</span>
+  setError(<span class="string">''</span>);              <span class="comment">// เคลียร์ error เก่า</span>
+  setIsLoading(<span class="keyword">true</span>);        <span class="comment">// แสดงสถานะ loading</span>
+
+  <span class="keyword">try</span> {
+    <span class="keyword">await</span> login(email, password);  <span class="comment">// เรียก API login ผ่าน AuthContext</span>
+    navigate(<span class="string">'/'</span>);                  <span class="comment">// สำเร็จ → ไปหน้า Dashboard</span>
+  } <span class="keyword">catch</span> (err) {
+    <span class="comment">// จัดการ Error ตาม HTTP Status Code</span>
+    <span class="keyword">if</span> (status === <span class="highlight">423</span>) {
+      <span class="comment">// บัญชีถูก Lock → แสดงเวลาที่เหลือ</span>
+      setError(<span class="string">`บัญชีถูกล็อก กรุณารอ ${minutesLeft} นาที`</span>);
+    } <span class="keyword">else</span> {
+      setError(errorData.message); <span class="comment">// แสดง error จาก Backend</span>
+    }
+  } <span class="keyword">finally</span> {
+    setIsLoading(<span class="keyword">false</span>);       <span class="comment">// ปิด loading ทุกกรณี</span>
+  }
+};</div>
+
+        <h3>3.4 AuthContext.tsx — login function</h3>
+        <div class="code-block"><span class="keyword">const</span> login = useCallback(<span class="keyword">async</span> (email: <span class="highlight">string</span>, password: <span class="highlight">string</span>) => {
+  <span class="comment">// 1. เรียก API POST /api/auth/login</span>
+  <span class="keyword">const</span> response = <span class="keyword">await</span> api.post&lt;ApiResponse&lt;LoginResponse&gt;&gt;(<span class="string">'/auth/login'</span>, { email, password });
+  <span class="keyword">const</span> data = response.data.data!;
+
+  <span class="comment">// 2. เก็บ Token และ User ลง localStorage (persist session)</span>
+  localStorage.setItem(<span class="string">'token'</span>, data.token);
+  localStorage.setItem(<span class="string">'user'</span>, JSON.stringify(data.user));
+
+  <span class="comment">// 3. อัพเดท State ให้ทั้ง App รู้ว่า login แล้ว</span>
+  setToken(data.token);
+  setUser(data.user);
+}, []);</div>
+        <p><strong>สรุป:</strong> Frontend ส่ง email + password ไป Backend → ได้ token กลับมา → เก็บใน localStorage → อัพเดท State → Redirect ไป Dashboard</p>
+    </div>
+
+    <!-- Section 4: Backend Code Explanation -->
+    <div class="card">
+        <h2><span class="section-number">4</span>อธิบายโค้ด Backend</h2>
+
+        <h3>4.1 ไฟล์ที่เกี่ยวข้อง</h3>
+        <table>
+            <tr><th>ไฟล์</th><th>หน้าที่</th></tr>
+            <tr><td><code>src/routes/auth.routes.ts</code></td><td>กำหนด Route: POST /api/auth/login</td></tr>
+            <tr><td><code>src/validators/auth.validator.ts</code></td><td>ตรวจสอบ Input (email format, password ไม่ว่าง)</td></tr>
+            <tr><td><code>src/controllers/auth.controller.ts</code></td><td>รับ Request, ส่งต่อไป Service, ส่ง Response กลับ</td></tr>
+            <tr><td><code>src/services/auth.service.ts</code></td><td>Business Logic หลัก: ตรวจ user, password, สร้าง token</td></tr>
+            <tr><td><code>src/utils/errors.ts</code></td><td>Custom Error Classes (UnauthorizedError, AccountLockedError)</td></tr>
+        </table>
+
+        <h3>4.2 Route Definition (auth.routes.ts)</h3>
+        <div class="code-block"><span class="comment">// กำหนดเส้นทาง API สำหรับ Login</span>
+router.post(<span class="string">'/login'</span>, loginValidation, AuthController.login);
+<span class="comment">// loginValidation → ตรวจ input ก่อน</span>
+<span class="comment">// AuthController.login → ส่งต่อไป Controller</span></div>
+
+        <h3>4.3 Validator (auth.validator.ts)</h3>
+        <div class="code-block"><span class="keyword">export const</span> loginValidation = [
+  body(<span class="string">'email'</span>)
+    .isEmail().withMessage(<span class="string">'รูปแบบอีเมลไม่ถูกต้อง'</span>),   <span class="comment">// ต้องเป็น email format</span>
+  body(<span class="string">'password'</span>)
+    .notEmpty().withMessage(<span class="string">'กรุณากรอกรหัสผ่าน'</span>),      <span class="comment">// ต้องไม่ว่าง</span>
+];</div>
+
+        <h3>4.4 Controller (auth.controller.ts)</h3>
+        <div class="code-block"><span class="keyword">static async</span> login(req: Request, res: Response, next: NextFunction) {
+  <span class="comment">// 1. ตรวจ Validation Result</span>
+  <span class="keyword">const</span> errors = validationResult(req);
+  <span class="keyword">if</span> (!errors.isEmpty()) {
+    res.status(<span class="highlight">400</span>).json({ success: <span class="keyword">false</span>, error: { ... } });
+    <span class="keyword">return</span>;
+  }
+
+  <span class="comment">// 2. ดึง email, password จาก Request Body</span>
+  <span class="keyword">const</span> { email, password } = req.body;
+
+  <span class="comment">// 3. เรียก Service Layer ทำ Business Logic</span>
+  <span class="keyword">const</span> result = <span class="keyword">await</span> authService.login({ email, password });
+
+  <span class="comment">// 4. ส่ง Response กลับ (token + user data)</span>
+  res.status(<span class="highlight">200</span>).json({ success: <span class="keyword">true</span>, data: result });
+
+  <span class="comment">// 5. หากเป็น AccountLockedError → ส่ง 423 พร้อมเวลา lock</span>
+  <span class="keyword">if</span> (error <span class="keyword">instanceof</span> AccountLockedError) {
+    res.status(<span class="highlight">423</span>).json({ ... lockedUntil ... });
+  }
+}</div>
+
+        <h3>4.5 Service Layer — login() (auth.service.ts) — หัวใจของระบบ</h3>
+        <div class="code-block"><span class="keyword">async</span> login(data: LoginDto): Promise&lt;LoginResponse&gt; {
+  <span class="comment">// ===== ขั้นตอนที่ 1: ค้นหา User จาก Database =====</span>
+  <span class="keyword">const</span> result = <span class="keyword">await</span> pool.request()
+    .input(<span class="string">'email'</span>, sql.NVarChar, email.toLowerCase().trim())
+    .query(<span class="string">'SELECT * FROM users WHERE email = @email'</span>);
+  <span class="comment">// ใช้ parameterized query ป้องกัน SQL Injection</span>
+
+  <span class="keyword">if</span> (!user) <span class="keyword">throw new</span> UnauthorizedError(<span class="string">'อีเมลหรือรหัสผ่านไม่ถูกต้อง'</span>);
+
+  <span class="comment">// ===== ขั้นตอนที่ 2: ตรวจสอบสถานะบัญชี =====</span>
+  <span class="keyword">if</span> (user.status === <span class="string">'suspended'</span>) <span class="keyword">throw new</span> UnauthorizedError(<span class="string">'บัญชีถูกระงับ'</span>);
+  <span class="keyword">if</span> (user.status === <span class="string">'locked'</span> && lockNotExpired) <span class="keyword">throw new</span> AccountLockedError(lockedUntil);
+
+  <span class="comment">// ===== ขั้นตอนที่ 3: เปรียบเทียบ Password ด้วย bcrypt =====</span>
+  <span class="keyword">const</span> isValid = <span class="keyword">await</span> bcrypt.compare(password, user.password_hash);
+  <span class="comment">// bcrypt.compare ใช้ salt ที่ฝังอยู่ใน hash ในการเปรียบเทียบ</span></div>
+
+        <div class="code-block">  <span class="comment">// ===== ขั้นตอนที่ 4: หาก Password ผิด =====</span>
+  <span class="keyword">if</span> (!isValid) {
+    newAttempts = user.failed_login_attempts + <span class="highlight">1</span>;
+    <span class="keyword">if</span> (newAttempts >= <span class="highlight">5</span>) {
+      <span class="comment">// Lock บัญชี 15 นาที</span>
+      lockedUntil = <span class="keyword">new</span> Date(Date.now() + <span class="highlight">15</span> * <span class="highlight">60</span> * <span class="highlight">1000</span>);
+      UPDATE users SET status = <span class="string">'locked'</span>, locked_until = lockedUntil;
+      <span class="keyword">throw new</span> AccountLockedError(lockedUntil);
+    }
+    UPDATE users SET failed_login_attempts = newAttempts;
+    <span class="keyword">throw new</span> UnauthorizedError(<span class="string">'อีเมลหรือรหัสผ่านไม่ถูกต้อง'</span>);
+  }
+
+  <span class="comment">// ===== ขั้นตอนที่ 5: Login สำเร็จ =====</span>
+  <span class="comment">// Reset failed attempts และ unlock บัญชี</span>
+  UPDATE users SET failed_login_attempts = <span class="highlight">0</span>, locked_until = NULL, status = <span class="string">'active'</span>;
+
+  <span class="comment">// ===== ขั้นตอนที่ 6: สร้าง JWT Token =====</span>
+  <span class="keyword">const</span> tokenPayload = { userId, email, role, sessionId };
+  <span class="keyword">const</span> token = jwt.sign(payload, JWT_SECRET, { expiresIn: <span class="string">'24h'</span> });
+
+  <span class="comment">// ===== ขั้นตอนที่ 7: บันทึก Session ลง Database =====</span>
+  <span class="keyword">const</span> tokenHash = crypto.createHash(<span class="string">'sha256'</span>).update(token).digest(<span class="string">'hex'</span>);
+  INSERT INTO sessions (id, user_id, token_hash, expires_at);
+  <span class="comment">// เก็บ hash ของ token (ไม่เก็บ token ตรงๆ เพื่อความปลอดภัย)</span>
+
+  <span class="keyword">return</span> { token, user };  <span class="comment">// ส่ง token + ข้อมูล user กลับ</span>
+}</div>
+    </div>
+
+    <!-- Section 5: Security Features -->
+    <div class="card">
+        <h2><span class="section-number">5</span>Security Features (ฟีเจอร์ด้านความปลอดภัย)</h2>
+        <table>
+            <tr><th>ฟีเจอร์</th><th>รายละเอียด</th><th>โค้ดที่เกี่ยวข้อง</th></tr>
+            <tr>
+                <td><strong>Password Hashing</strong></td>
+                <td>ใช้ bcrypt (salt round = 12) ไม่เก็บ password เป็น plain text</td>
+                <td><code>bcrypt.hash(password, 12)</code></td>
+            </tr>
+            <tr>
+                <td><strong>Brute Force Protection</strong></td>
+                <td>ล็อกบัญชีหลังใส่ผิด 5 ครั้ง เป็นเวลา 15 นาที</td>
+                <td><code>MAX_FAILED_ATTEMPTS=5, LOCK_DURATION=15min</code></td>
+            </tr>
+            <tr>
+                <td><strong>SQL Injection Prevention</strong></td>
+                <td>ใช้ Parameterized Query ทุก Query</td>
+                <td><code>.input('email', sql.NVarChar, email)</code></td>
+            </tr>
+            <tr>
+                <td><strong>Token Security</strong></td>
+                <td>เก็บ Hash ของ Token ใน DB (ไม่เก็บ token ตรงๆ)</td>
+                <td><code>crypto.createHash('sha256').update(token)</code></td>
+            </tr>
+            <tr>
+                <td><strong>Session Management</strong></td>
+                <td>Token หมดอายุ 24 ชม. + ตรวจ session ใน DB ทุกครั้ง</td>
+                <td><code>expiresIn: '24h', validateToken()</code></td>
+            </tr>
+            <tr>
+                <td><strong>Generic Error Messages</strong></td>
+                <td>ไม่บอกว่า email หรือ password ที่ผิด (ป้องกัน enumeration)</td>
+                <td><code>'อีเมลหรือรหัสผ่านไม่ถูกต้อง'</code></td>
+            </tr>
+            <tr>
+                <td><strong>Input Validation</strong></td>
+                <td>ตรวจ format ด้วย express-validator ก่อนเข้า logic</td>
+                <td><code>loginValidation middleware</code></td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Section 6: Sequence Diagram (Text) -->
+    <div class="card">
+        <h2><span class="section-number">6</span>Sequence Diagram (ลำดับการทำงาน)</h2>
+        <div class="code-block" style="font-size: 12px;">
+┌──────────┐     ┌───────────┐     ┌────────────┐     ┌─────────────┐     ┌──────────┐
+│  Browser │     │  React    │     │  Express   │     │ AuthService │     │ Database │
+│  (User)  │     │  Frontend │     │  Backend   │     │             │     │ (MSSQL)  │
+└────┬─────┘     └─────┬─────┘     └──────┬─────┘     └──────┬──────┘     └────┬─────┘
+     │                  │                  │                   │                 │
+     │  กรอก email/pass │                  │                   │                 │
+     │─────────────────>│                  │                   │                 │
+     │                  │                  │                   │                 │
+     │                  │  POST /auth/login│                   │                 │
+     │                  │─────────────────>│                   │                 │
+     │                  │                  │                   │                 │
+     │                  │                  │  validate input   │                 │
+     │                  │                  │──────────────────>│                 │
+     │                  │                  │                   │                 │
+     │                  │                  │                   │  SELECT user    │
+     │                  │                  │                   │────────────────>│
+     │                  │                  │                   │                 │
+     │                  │                  │                   │  user record    │
+     │                  │                  │                   │<────────────────│
+     │                  │                  │                   │                 │
+     │                  │                  │                   │  bcrypt.compare │
+     │                  │                  │                   │─────┐           │
+     │                  │                  │                   │     │           │
+     │                  │                  │                   │<────┘           │
+     │                  │                  │                   │                 │
+     │                  │                  │                   │  INSERT session │
+     │                  │                  │                   │────────────────>│
+     │                  │                  │                   │                 │
+     │                  │                  │  { token, user }  │                 │
+     │                  │                  │<──────────────────│                 │
+     │                  │                  │                   │                 │
+     │                  │  200 OK + token  │                   │                 │
+     │                  │<─────────────────│                   │                 │
+     │                  │                  │                   │                 │
+     │                  │  localStorage    │                   │                 │
+     │                  │  .setItem(token) │                   │                 │
+     │                  │─────┐            │                   │                 │
+     │                  │     │            │                   │                 │
+     │                  │<────┘            │                   │                 │
+     │                  │                  │                   │                 │
+     │  Navigate to /   │                  │                   │                 │
+     │<─────────────────│                  │                   │                 │
+     │                  │                  │                   │                 │
+</div>
+    </div>
+
+    <!-- Section 7: Error Handling Summary -->
+    <div class="card">
+        <h2><span class="section-number">7</span>สรุป Error Handling</h2>
+        <table>
+            <tr><th>HTTP Status</th><th>Error Code</th><th>สาเหตุ</th><th>ข้อความที่แสดงใน Frontend</th></tr>
+            <tr><td>400</td><td>VALIDATION_ERROR</td><td>email format ผิด หรือ password ว่าง</td><td>ข้อมูลไม่ถูกต้อง</td></tr>
+            <tr><td>401</td><td>UNAUTHORIZED</td><td>ไม่พบ email ใน DB หรือ password ไม่ตรง</td><td>อีเมลหรือรหัสผ่านไม่ถูกต้อง</td></tr>
+            <tr><td>401</td><td>UNAUTHORIZED</td><td>บัญชีถูก suspend</td><td>บัญชีถูกระงับการใช้งาน</td></tr>
+            <tr><td>423</td><td>ACCOUNT_LOCKED</td><td>ใส่รหัสผิดครบ 5 ครั้ง</td><td>บัญชีถูกล็อก กรุณารอ X นาที</td></tr>
+            <tr><td>500</td><td>INTERNAL_ERROR</td><td>ข้อผิดพลาดภายในระบบ</td><td>ระบบไม่สามารถดำเนินการได้ชั่วคราว</td></tr>
+        </table>
+    </div>
+
+    <!-- Section 8: Data Flow Summary -->
+    <div class="card">
+        <h2><span class="section-number">8</span>สรุป Data Flow</h2>
+        <h3>Request (Frontend → Backend)</h3>
+        <div class="code-block"><span class="comment">// HTTP Request</span>
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  <span class="string">"email"</span>: <span class="string">"user@example.com"</span>,
+  <span class="string">"password"</span>: <span class="string">"mypassword123"</span>
+}</div>
+
+        <h3>Response — สำเร็จ (Backend → Frontend)</h3>
+        <div class="code-block"><span class="comment">// HTTP Response 200 OK</span>
+{
+  <span class="string">"success"</span>: <span class="keyword">true</span>,
+  <span class="string">"data"</span>: {
+    <span class="string">"token"</span>: <span class="string">"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."</span>,
+    <span class="string">"user"</span>: {
+      <span class="string">"id"</span>: <span class="string">"uuid-xxx"</span>,
+      <span class="string">"email"</span>: <span class="string">"user@example.com"</span>,
+      <span class="string">"firstName"</span>: <span class="string">"สมชาย"</span>,
+      <span class="string">"lastName"</span>: <span class="string">"ใจดี"</span>,
+      <span class="string">"role"</span>: <span class="string">"user"</span>,
+      <span class="string">"status"</span>: <span class="string">"active"</span>
+    }
+  }
+}</div>
+
+        <h3>Response — ล้มเหลว (Account Locked)</h3>
+        <div class="code-block"><span class="comment">// HTTP Response 423 Locked</span>
+{
+  <span class="string">"success"</span>: <span class="keyword">false</span>,
+  <span class="string">"error"</span>: {
+    <span class="string">"code"</span>: <span class="string">"ACCOUNT_LOCKED"</span>,
+    <span class="string">"message"</span>: <span class="string">"บัญชีถูกล็อกชั่วคราว"</span>,
+    <span class="string">"details"</span>: [{ <span class="string">"lockedUntil"</span>: <span class="string">"2026-08-04T10:30:00.000Z"</span> }]
+  }
+}</div>
+    </div>
+
+    <!-- Section 9: JWT Token Structure -->
+    <div class="card">
+        <h2><span class="section-number">9</span>โครงสร้าง JWT Token</h2>
+        <div class="code-block"><span class="comment">// JWT Token Payload (ข้อมูลที่ฝังใน Token)</span>
+{
+  <span class="string">"userId"</span>: <span class="string">"550e8400-e29b-41d4-a716-446655440000"</span>,  <span class="comment">// UUID ของผู้ใช้</span>
+  <span class="string">"email"</span>: <span class="string">"user@example.com"</span>,                  <span class="comment">// อีเมลผู้ใช้</span>
+  <span class="string">"role"</span>: <span class="string">"user"</span>,                               <span class="comment">// สิทธิ์ (user / admin)</span>
+  <span class="string">"sessionId"</span>: <span class="string">"a1b2c3d4-..."</span>,                   <span class="comment">// Session ID (ใช้ revoke session)</span>
+  <span class="string">"iat"</span>: 1722758400,                              <span class="comment">// Issued At (เวลาสร้าง)</span>
+  <span class="string">"exp"</span>: 1722844800                               <span class="comment">// Expires (หมดอายุ 24 ชม.)</span>
+}</div>
+        <p><strong>หมายเหตุ:</strong> Token ถูกเก็บเป็น SHA-256 Hash ในตาราง <code>sessions</code> เพื่อป้องกันการรั่วไหลของ token จากฐานข้อมูล</p>
+    </div>
+
+
+</div>
+</body>
+</html>

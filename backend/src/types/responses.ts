@@ -1,0 +1,66 @@
+// User Response (ไม่รวม password_hash)
+export interface UserResponse {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: 'admin' | 'user';
+  status: 'active' | 'suspended' | 'locked';
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Paginated Response
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+// Success Response
+export interface SuccessResponse<T = undefined> {
+  success: true;
+  data?: T;
+  message?: string;
+}
+
+// Error Response
+export interface ErrorResponse {
+  success: false;
+  error: {
+    code: string;
+    message: string;
+    details?: Record<string, string>[];
+  };
+}
+
+// Login Response
+export interface LoginResponse {
+  token: string;
+  user: UserResponse;
+}
+
+// Token Payload (JWT)
+export interface TokenPayload {
+  userId: string;
+  email: string;
+  role: 'admin' | 'user';
+  sessionId: string;
+  exp?: number;
+  iat?: number;
+}
+
+// Product Response
+export interface ProductResponse {
+  id: string;
+  name: string;
+  sku: string;
+  category: string;
+  quantity: number;
+  unitPrice: number;
+  description: string | null;
+  status: 'active' | 'inactive';
+  createdAt: Date;
+  updatedAt: Date;
+}

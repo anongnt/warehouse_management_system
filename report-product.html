@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Module Report - Warehouse Management System</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { color: #1a237e; text-align: center; margin-bottom: 10px; font-size: 2em; }
+        .subtitle { text-align: center; color: #666; margin-bottom: 40px; }
+        h2 { color: #283593; margin: 30px 0 15px; padding-bottom: 8px; border-bottom: 3px solid #3f51b5; }
+        h3 { color: #1565c0; margin: 20px 0 10px; }
+        h4 { color: #1976d2; margin: 15px 0 8px; }
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>📦 Product Module Report</h1>
+    <p class="subtitle">ระบบจัดการข้อมูลสินค้าในคลังสินค้า (Warehouse Product CRUD)</p>
+
+    <!-- Section 1: Overview -->
+    <section style="background: white; border-radius: 8px; padding: 25px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h2>1. ภาพรวมของระบบ (System Overview)</h2>
+        <p>ระบบจัดการสินค้า (Product Module) เป็นฟีเจอร์หลักของระบบ Warehouse Management System ที่ช่วยให้ผู้ใช้ที่ผ่านการยืนยันตัวตนแล้วสามารถ:</p>
+        <ul style="margin: 15px 0; padding-left: 30px;">
+            <li><strong>เพิ่ม (Create)</strong> - สร้างข้อมูลสินค้าใหม่ลงในระบบ</li>
+            <li><strong>ดู (Read)</strong> - แสดงรายการสินค้าแบบ pagination พร้อมค้นหา และดูรายละเอียดแต่ละรายการ</li>
+            <li><strong>แก้ไข (Update)</strong> - อัปเดตข้อมูลสินค้าที่มีอยู่ในระบบ</li>
+            <li><strong>ลบ (Delete)</strong> - ลบข้อมูลสินค้าออกจากระบบอย่างถาวร</li>
+        </ul>
+        <div style="background: #e3f2fd; border-left: 4px solid #1976d2; padding: 15px; border-radius: 4px; margin-top: 15px;">
+            <strong>สถาปัตยกรรม:</strong> ใช้รูปแบบ <code>Frontend (React) → API Routes → Controller → Service → Database (MSSQL)</code>
+        </div>
+    </section>
+
+    <!-- Section 2: Architecture Diagram -->
+    <section style="background: white; border-radius: 8px; padding: 25px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h2>2. สถาปัตยกรรมของระบบ (Architecture)</h2>
+        <div style="background: #fafafa; border: 1px solid #ddd; border-radius: 8px; padding: 20px; text-align: center; font-family: monospace; font-size: 14px; overflow-x: auto;">
+<pre style="display: inline-block; text-align: left;">
+┌─────────────────────────────────────────────────────────────────┐
+│                        FRONTEND (React + TypeScript)             │
+├─────────────────────────────────────────────────────────────────┤
+│  ProductListPage.tsx                                             │
+│  ├── ProductFormModal.tsx (สร้าง/แก้ไข)                          │
+│  ├── ProductDeleteConfirmDialog.tsx (ยืนยันลบ)                   │
+│  └── productApi.ts (API Service Layer)                          │
+└───────────────────────────────┬─────────────────────────────────┘
+                                │ HTTP (Axios + JWT Token)
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    BACKEND (Express + TypeScript)                │
+├─────────────────────────────────────────────────────────────────┤
+│  product.routes.ts (Router + Auth Middleware)                    │
+│      │                                                          │
+│      ▼                                                          │
+│  product.validator.ts (express-validator)                        │
+│      │                                                          │
+│      ▼                                                          │
+│  product.controller.ts (Request/Response handling)               │
+│      │                                                          │
+│      ▼                                                          │
+│  product.service.ts (Business Logic)                            │
+│      │                                                          │
+│      ▼                                                          │
+│  MSSQL Database (products table)                                │
+└─────────────────────────────────────────────────────────────────┘
+</pre>
+        </div>
+    </section>
+
+    <!-- Section 3: Database -->
+    <section style="background: white; border-radius: 8px; padding: 25px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h2>3. ฐานข้อมูล (Database Schema)</h2>
+        <h3>ตาราง: products</h3>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            <thead>
+                <tr style="background: #3f51b5; color: white;">
+                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Column</th>
+                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Type</th>
+                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Constraints</th>
+                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">คำอธิบาย</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td style="padding: 8px; border: 1px solid #ddd;"><code>id</code></td><td style="padding: 8px; border: 1px solid #ddd;">UNIQUEIDENTIFIER</td><td style="padding: 8px; border: 1px solid #ddd;">PRIMARY KEY, DEFAULT NEWID()</td><td style="padding: 8px; border: 1px solid #ddd;">รหัสสินค้า (UUID)</td></tr>
+                <tr style="background: #f9f9f9;"><td style="padding: 8px; border: 1px solid #ddd;"><code>name</code></td><td style="padding: 8px; border: 1px solid #ddd;">NVARCHAR(200)</td><td style="padding: 8px; border: 1px solid #ddd;">NOT NULL</td><td style="padding: 8px; border: 1px solid #ddd;">ชื่อสินค้า</td></tr>
+                <tr><td style="padding: 8px; border: 1px solid #ddd;"><code>sku</code></td><td style="padding: 8px; border: 1px solid #ddd;">NVARCHAR(50)</td><td style="padding: 8px; border: 1px solid #ddd;">NOT NULL, UNIQUE</td><td style="padding: 8px; border: 1px solid #ddd;">Stock Keeping Unit (ไม่ซ้ำ)</td></tr>
+                <tr style="background: #f9f9f9;"><td style="padding: 8px; border: 1px solid #ddd;"><code>category</code></td><td style="padding: 8px; border: 1px solid #ddd;">NVARCHAR(100)</td><td style="padding: 8px; border: 1px solid #ddd;">NOT NULL</td><td style="padding: 8px; border: 1px solid #ddd;">หมวดหมู่สินค้า</td></tr>
+                <tr><td style="padding: 8px; border: 1px solid #ddd;"><code>quantity</code></td><td style="padding: 8px; border: 1px solid #ddd;">INT</td><td style="padding: 8px; border: 1px solid #ddd;">NOT NULL, CHECK (0-999,999)</td><td style="padding: 8px; border: 1px solid #ddd;">จำนวนสินค้าในคลัง</td></tr>
+                <tr style="background: #f9f9f9;"><td style="padding: 8px; border: 1px solid #ddd;"><code>unit_price</code></td><td style="padding: 8px; border: 1px solid #ddd;">DECIMAL(12,2)</td><td style="padding: 8px; border: 1px solid #ddd;">NOT NULL, CHECK (0-999,999,999.99)</td><td style="padding: 8px; border: 1px solid #ddd;">ราคาต่อหน่วย</td></tr>
+                <tr><td style="padding: 8px; border: 1px solid #ddd;"><code>description</code></td><td style="padding: 8px; border: 1px solid #ddd;">NVARCHAR(1000)</td><td style="padding: 8px; border: 1px solid #ddd;">NULL</td><td style="padding: 8px; border: 1px solid #ddd;">คำอธิบายสินค้า (ไม่บังคับ)</td></tr>
+                <tr style="background: #f9f9f9;"><td style="padding: 8px; border: 1px solid #ddd;"><code>status</code></td><td style="padding: 8px; border: 1px solid #ddd;">NVARCHAR(10)</td><td style="padding: 8px; border: 1px solid #ddd;">NOT NULL, CHECK ('active'/'inactive')</td><td style="padding: 8px; border: 1px solid #ddd;">สถานะสินค้า</td></tr>
+                <tr><td style="padding: 8px; border: 1px solid #ddd;"><code>created_at</code></td><td style="padding: 8px; border: 1px solid #ddd;">DATETIME2</td><td style="padding: 8px; border: 1px solid #ddd;">NOT NULL, DEFAULT GETUTCDATE()</td><td style="padding: 8px; border: 1px solid #ddd;">วันที่สร้าง</td></tr>
+                <tr style="background: #f9f9f9;"><td style="padding: 8px; border: 1px solid #ddd;"><code>updated_at</code></td><td style="padding: 8px; border: 1px solid #ddd;">DATETIME2</td><td style="padding: 8px; border: 1px solid #ddd;">NOT NULL, DEFAULT GETUTCDATE()</td><td style="padding: 8px; border: 1px solid #ddd;">วันที่อัปเดตล่าสุด</td></tr>
+            </tbody>
+        </table>
+        <h3 style="margin-top: 20px;">Indexes</h3>
+        <ul style="padding-left: 30px; margin-top: 10px;">
+            <li><code>idx_products_sku</code> — เร่งความเร็วการค้นหาด้วย SKU</li>
+            <li><code>idx_products_category</code> — เร่งการกรองตามหมวดหมู่</li>
+            <li><code>idx_products_status</code> — เร่งการกรองตามสถานะ</li>
+            <li><code>idx_products_name</code> — เร่งการค้นหาตามชื่อ</li>
+            <li><code>idx_products_created_at</code> (DESC) — เร่งการเรียงลำดับตามวันที่สร้าง</li>
+        </ul>
+    </section>
+
+    <!-- Section 4: API Endpoints -->
+    <section style="background: white; border-radius: 8px; padding: 25px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h2>4. API Endpoints</h2>
+        <p style="margin-bottom: 15px;">ทุก endpoint ต้องมี <code>Authorization: Bearer &lt;JWT Token&gt;</code> ใน Header</p>
+
+        <!-- GET List -->
+        <div style="background: #e8f5e9; border-left: 4px solid #4caf50; padding: 15px; border-radius: 4px; margin-bottom: 15px;">
+            <h4 style="color: #2e7d32; margin: 0;">GET /api/products</h4>
+            <p style="margin: 5px 0; color: #555;">ดึงรายการสินค้าแบบ pagination พร้อมค้นหา</p>
+            <table style="width: 100%; margin-top: 10px; font-size: 14px;">
+                <tr><td style="width: 120px;"><strong>Query Params:</strong></td><td><code>page</code> (default: 1), <code>limit</code> (default: 20, max: 100), <code>search</code> (optional)</td></tr>
+                <tr><td><strong>Response:</strong></td><td><code>{ success: true, data: { data: Product[], total, page, totalPages } }</code></td></tr>
+                <tr><td><strong>Status:</strong></td><td>200 OK | 400 Validation Error | 401 Unauthorized</td></tr>
+            </table>
+        </div>
+
+        <!-- GET by ID -->
+        <div style="background: #e8f5e9; border-left: 4px solid #4caf50; padding: 15px; border-radius: 4px; margin-bottom: 15px;">
+            <h4 style="color: #2e7d32; margin: 0;">GET /api/products/:id</h4>
+            <p style="margin: 5px 0; color: #555;">ดึงข้อมูลสินค้าตาม ID</p>
+            <table style="width: 100%; margin-top: 10px; font-size: 14px;">
+                <tr><td style="width: 120px;"><strong>Params:</strong></td><td><code>id</code> (UUID format)</td></tr>
+                <tr><td><strong>Response:</strong></td><td><code>{ success: true, data: Product }</code></td></tr>
+                <tr><td><strong>Status:</strong></td><td>200 OK | 400 Invalid ID | 404 Not Found | 401 Unauthorized</td></tr>
+            </table>
+        </div>
+
+        <!-- POST Create -->
+        <div style="background: #fff3e0; border-left: 4px solid #ff9800; padding: 15px; border-radius: 4px; margin-bottom: 15px;">
+            <h4 style="color: #e65100; margin: 0;">POST /api/products</h4>
+            <p style="margin: 5px 0; color: #555;">สร้างสินค้าใหม่</p>
+            <table style="width: 100%; margin-top: 10px; font-size: 14px;">
+                <tr><td style="width: 120px;"><strong>Body:</strong></td><td><code>{ name, sku, category, quantity, unitPrice, description? }</code></td></tr>
+                <tr><td><strong>Response:</strong></td><td><code>{ success: true, data: Product, message: "สร้างสินค้าสำเร็จ" }</code></td></tr>
+                <tr><td><strong>Status:</strong></td><td>201 Created | 400 Validation Error | 409 Duplicate SKU | 401 Unauthorized</td></tr>
+            </table>
+        </div>
+
+        <!-- PUT Update -->
+        <div style="background: #e3f2fd; border-left: 4px solid #2196f3; padding: 15px; border-radius: 4px; margin-bottom: 15px;">
+            <h4 style="color: #0d47a1; margin: 0;">PUT /api/products/:id</h4>
+            <p style="margin: 5px 0; color: #555;">อัปเดตข้อมูลสินค้า (Partial Update)</p>
+            <table style="width: 100%; margin-top: 10px; font-size: 14px;">
+                <tr><td style="width: 120px;"><strong>Body:</strong></td><td><code>{ name?, sku?, category?, quantity?, unitPrice?, description?, status? }</code></td></tr>
+                <tr><td><strong>Response:</strong></td><td><code>{ success: true, data: Product, message: "อัปเดตสินค้าสำเร็จ" }</code></td></tr>
+                <tr><td><strong>Status:</strong></td><td>200 OK | 400 Validation | 404 Not Found | 409 Duplicate SKU | 401 Unauthorized</td></tr>
+            </table>
+        </div>
+
+        <!-- DELETE -->
+        <div style="background: #fce4ec; border-left: 4px solid #f44336; padding: 15px; border-radius: 4px; margin-bottom: 15px;">
+            <h4 style="color: #c62828; margin: 0;">DELETE /api/products/:id</h4>
+            <p style="margin: 5px 0; color: #555;">ลบสินค้าอย่างถาวร</p>
+            <table style="width: 100%; margin-top: 10px; font-size: 14px;">
+                <tr><td style="width: 120px;"><strong>Params:</strong></td><td><code>id</code> (UUID format)</td></tr>
+                <tr><td><strong>Response:</strong></td><td><code>{ success: true, message: "ลบสินค้าสำเร็จ" }</code></td></tr>
+                <tr><td><strong>Status:</strong></td><td>200 OK | 400 Invalid ID | 404 Not Found | 401 Unauthorized</td></tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- Section 5: Backend Flow -->
+    <section style="background: white; border-radius: 8px; padding: 25px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h2>5. การทำงานฝั่ง Backend (Backend Flow)</h2>
+
+        <h3>5.1 Routes (product.routes.ts)</h3>
+        <p>กำหนดเส้นทาง API 5 เส้นทาง โดยทุก route ต้องผ่าน <code>authenticate</code> middleware ก่อน:</p>
+        <div style="background: #263238; color: #eee; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 13px; margin: 10px 0; overflow-x: auto;">
+            <pre>router.use(authenticate);  // ตรวจสอบ JWT Token ทุก request
+
+router.get('/',    productListValidation,   ProductController.findAll);
+router.get('/:id', productIdValidation,     ProductController.findById);
+router.post('/',   createProductValidation, ProductController.create);
+router.put('/:id', updateProductValidation, ProductController.update);
+router.delete('/:id', productIdValidation,  ProductController.delete);</pre>
+        </div>
+
+        <h3>5.2 Validator (product.validator.ts)</h3>
+        <p>ใช้ <code>express-validator</code> ตรวจสอบข้อมูลก่อนถึง Controller:</p>
+        <ul style="padding-left: 30px; margin: 10px 0;">
+            <li><strong>name:</strong> ไม่ว่าง, 1-200 ตัวอักษร</li>
+            <li><strong>sku:</strong> ไม่ว่าง, 1-50 ตัวอักษร, เฉพาะ alphanumeric + <code>-</code> + <code>_</code></li>
+            <li><strong>category:</strong> ไม่ว่าง, 1-100 ตัวอักษร</li>
+            <li><strong>quantity:</strong> จำนวนเต็ม 0-999,999</li>
+            <li><strong>unitPrice:</strong> ทศนิยม 0-999,999,999.99 (ไม่เกิน 2 ตำแหน่ง)</li>
+            <li><strong>description:</strong> ไม่เกิน 1,000 ตัวอักษร (optional)</li>
+            <li><strong>status:</strong> เฉพาะ 'active' หรือ 'inactive' (optional, ใช้ใน update เท่านั้น)</li>
+            <li><strong>id param:</strong> ต้องเป็น UUID format</li>
+            <li><strong>pagination:</strong> page ≥ 1, limit 1-100</li>
+        </ul>
+
+        <h3>5.3 Controller (product.controller.ts)</h3>
+        <p>รับ request จาก router, ตรวจผล validation, เรียก service, และส่ง response กลับ:</p>
+        <ul style="padding-left: 30px; margin: 10px 0;">
+            <li>ตรวจสอบ <code>validationResult(req)</code> — หากไม่ผ่านส่ง 400 พร้อมรายละเอียด field errors</li>
+            <li>เรียก method ของ <code>ProductService</code> ที่เหมาะสม</li>
+            <li>จัดการ error ผ่าน <code>next(error)</code> ไปยัง error middleware กลาง</li>
+        </ul>
+
+        <h3>5.4 Service (product.service.ts)</h3>
+        <p>ชั้น Business Logic หลัก จัดการ:</p>
+        <div style="background: #f5f5f5; padding: 15px; border-radius: 6px; margin: 10px 0;">
+            <h4>findAll(query)</h4>
+            <ul style="padding-left: 20px;">
+                <li>คำนวณ offset จาก page/limit</li>
+                <li>สร้าง WHERE clause สำหรับ search (LIKE %search% บน name, sku, category)</li>
+                <li>Query จำนวนทั้งหมด (COUNT) แยกจากข้อมูล</li>
+                <li>เรียงลำดับ <code>ORDER BY created_at DESC</code> + <code>OFFSET/FETCH</code></li>
+                <li>คืน <code>{ data, total, page, totalPages }</code></li>
+            </ul>
+            <h4>create(data)</h4>
+            <ul style="padding-left: 20px;">
+                <li>ตรวจสอบ SKU ไม่ซ้ำ → ถ้าซ้ำ throw <code>ConflictError</code> (409)</li>
+                <li>INSERT พร้อม status = 'active' และ timestamps = GETUTCDATE()</li>
+                <li>ใช้ <code>OUTPUT INSERTED.*</code> เพื่อคืนข้อมูลที่สร้างทันที</li>
+            </ul>
+            <h4>update(id, data)</h4>
+            <ul style="padding-left: 20px;">
+                <li>ตรวจสอบสินค้ามีอยู่ → ถ้าไม่มี throw <code>NotFoundError</code> (404)</li>
+                <li>ถ้าอัปเดต SKU → ตรวจซ้ำกับสินค้าอื่น (ยกเว้นตัวเอง)</li>
+                <li>สร้าง dynamic SET clause เฉพาะ field ที่ส่งมา (Partial Update)</li>
+                <li>อัปเดต <code>updated_at = GETUTCDATE()</code> อัตโนมัติ</li>
+            </ul>
+            <h4>delete(id)</h4>
+            <ul style="padding-left: 20px;">
+                <li>ตรวจสอบสินค้ามีอยู่ → ถ้าไม่มี throw <code>NotFoundError</code> (404)</li>
+                <li><code>DELETE FROM products WHERE id = @id</code> (ลบถาวร)</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- Section 6: Frontend Flow -->
+    <section style="background: white; border-radius: 8px; padding: 25px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h2>6. การทำงานฝั่ง Frontend (Frontend Flow)</h2>
+
+        <h3>6.1 Product API Service (productApi.ts)</h3>
+        <p>ใช้ axios instance ที่มี JWT interceptor สำหรับเรียก API ทั้ง 5 ฟังก์ชัน:</p>
+        <div style="background: #263238; color: #eee; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 13px; margin: 10px 0; overflow-x: auto;">
+<pre>getProducts(params)       → GET    /api/products?page=&limit=&search=
+getProductById(id)        → GET    /api/products/:id
+createProduct(data)       → POST   /api/products
+updateProduct(id, data)   → PUT    /api/products/:id
+deleteProduct(id)         → DELETE /api/products/:id</pre>
+        </div>
+
+        <h3>6.2 Product List Page (ProductListPage.tsx)</h3>
+        <p>หน้าหลักสำหรับจัดการสินค้า ประกอบด้วย:</p>
+        <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
+            <thead>
+                <tr style="background: #e8eaf6;">
+                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Feature</th>
+                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">รายละเอียด</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td style="padding: 8px; border: 1px solid #ddd;">📋 ตารางสินค้า</td><td style="padding: 8px; border: 1px solid #ddd;">แสดง name, SKU, category, quantity, unitPrice, status, createdAt พร้อมปุ่มแก้ไข/ลบ</td></tr>
+                <tr style="background: #f9f9f9;"><td style="padding: 8px; border: 1px solid #ddd;">🔍 ค้นหา</td><td style="padding: 8px; border: 1px solid #ddd;">Debounce 300ms ค้นหาจาก name, SKU หรือ category รีเซ็ตหน้าเป็น 1 เมื่อค้นหา</td></tr>
+                <tr><td style="padding: 8px; border: 1px solid #ddd;">📄 Pagination</td><td style="padding: 8px; border: 1px solid #ddd;">ปุ่มก่อนหน้า/ถัดไป แสดง "หน้า X / Y" ค่าเริ่มต้น 20 รายการ/หน้า</td></tr>
+                <tr style="background: #f9f9f9;"><td style="padding: 8px; border: 1px solid #ddd;">⏳ Loading</td><td style="padding: 8px; border: 1px solid #ddd;">แสดง "กำลังโหลด..." ในตารางขณะ fetch ข้อมูล</td></tr>
+                <tr><td style="padding: 8px; border: 1px solid #ddd;">📭 Empty State</td><td style="padding: 8px; border: 1px solid #ddd;">แสดง "ไม่พบสินค้า" เมื่อไม่มีข้อมูล</td></tr>
+                <tr style="background: #f9f9f9;"><td style="padding: 8px; border: 1px solid #ddd;">✅ Notification</td><td style="padding: 8px; border: 1px solid #ddd;">แสดงข้อความสำเร็จ 3 วินาทีแล้วหายไป พร้อม refresh รายการ</td></tr>
+                <tr><td style="padding: 8px; border: 1px solid #ddd;">❌ Error</td><td style="padding: 8px; border: 1px solid #ddd;">แสดง error message จาก API (ไม่ปิด modal เมื่อ submit ไม่สำเร็จ)</td></tr>
+            </tbody>
+        </table>
+
+        <h3>6.3 Product Form Modal (ProductFormModal.tsx)</h3>
+        <p>ใช้ซ้ำได้ทั้งโหมดสร้างและแก้ไข:</p>
+        <ul style="padding-left: 30px; margin: 10px 0;">
+            <li><strong>โหมดสร้าง:</strong> ฟอร์มว่าง, ปุ่ม "สร้างสินค้า"</li>
+            <li><strong>โหมดแก้ไข:</strong> เติมข้อมูลเดิม, ปุ่ม "บันทึก", มี dropdown สถานะ</li>
+            <li><strong>Client-side Validation:</strong> ตรวจสอบ constraints เดียวกับ backend ก่อน submit</li>
+            <li><strong>หมวดหมู่:</strong> เลือกจาก dropdown 10 รายการ (อิเล็กทรอนิกส์, อุปกรณ์สำนักงาน, เครื่องมือช่าง ฯลฯ)</li>
+            <li><strong>Error Handling:</strong> แสดง error จาก API ภายใน modal โดยไม่ปิด modal</li>
+        </ul>
+
+        <h3>6.4 Product Delete Confirm Dialog (ProductDeleteConfirmDialog.tsx)</h3>
+        <ul style="padding-left: 30px; margin: 10px 0;">
+            <li>แสดงชื่อสินค้าที่จะลบ พร้อมข้อความเตือน "ไม่สามารถย้อนกลับได้"</li>
+            <li>ปุ่ม "ยกเลิก" และ "ลบ" พร้อมสถานะ loading "กำลังลบ..."</li>
+            <li>แสดง error หากลบไม่สำเร็จ</li>
+        </ul>
+    </section>
+
+    <!-- Section 7: Data Flow Diagram -->
+    <section style="background: white; border-radius: 8px; padding: 25px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h2>7. ลำดับการทำงาน (Data Flow)</h2>
+
+        <h3>7.1 การสร้างสินค้า (Create Product)</h3>
+        <div style="background: #fafafa; border: 1px solid #ddd; border-radius: 8px; padding: 20px; font-family: monospace; font-size: 13px; overflow-x: auto;">
+<pre>
+1. ผู้ใช้กดปุ่ม "+ เพิ่มสินค้า"
+   └── เปิด ProductFormModal (โหมดสร้าง)
+
+2. ผู้ใช้กรอกข้อมูล → กดปุ่ม "สร้างสินค้า"
+   └── Client-side Validation
+       ├── ✗ ไม่ผ่าน → แสดง field errors ใต้ input
+       └── ✓ ผ่าน → เรียก createProduct(data)
+
+3. Frontend → POST /api/products (พร้อม JWT Token)
+   └── Backend: authenticate middleware
+       ├── ✗ Token ไม่ถูกต้อง → 401 Unauthorized
+       └── ✓ Token ถูกต้อง → productValidator
+
+4. Backend: createProductValidation
+   ├── ✗ ไม่ผ่าน → 400 { code: "VALIDATION_ERROR", details: [...] }
+   └── ✓ ผ่าน → ProductController.create()
+
+5. ProductController → ProductService.create(data)
+   └── ตรวจสอบ SKU ซ้ำ
+       ├── ✗ ซ้ำ → 409 { code: "CONFLICT", message: "SKU นี้มีอยู่ในระบบแล้ว" }
+       └── ✓ ไม่ซ้ำ → INSERT INTO products (status='active', timestamps=GETUTCDATE())
+
+6. Response: 201 { success: true, data: Product, message: "สร้างสินค้าสำเร็จ" }
+   └── Frontend: ปิด modal → แสดง "สร้างสินค้าสำเร็จ" 3 วินาที → refresh รายการ
+</pre>
+        </div>
+
+        <h3 style="margin-top: 25px;">7.2 การค้นหาและแสดงรายการ (Search & List)</h3>
+        <div style="background: #fafafa; border: 1px solid #ddd; border-radius: 8px; padding: 20px; font-family: monospace; font-size: 13px; overflow-x: auto;">
+<pre>
+1. ผู้ใช้พิมพ์ในช่องค้นหา
+   └── Debounce 300ms (รอหยุดพิมพ์)
+       └── setDebouncedSearch(search) + setPage(1)
+
+2. useEffect(fetchProducts) ถูก trigger
+   └── GET /api/products?page=1&limit=20&search=xxx
+
+3. Backend: ค้นหาด้วย LIKE %search% บน name, sku, category
+   └── เรียงลำดับ created_at DESC + OFFSET/FETCH pagination
+
+4. Response: { data: Product[], total, page, totalPages }
+   └── Frontend: อัปเดตตาราง + pagination controls
+</pre>
+        </div>
+
+        <h3 style="margin-top: 25px;">7.3 การแก้ไขสินค้า (Update Product)</h3>
+        <div style="background: #fafafa; border: 1px solid #ddd; border-radius: 8px; padding: 20px; font-family: monospace; font-size: 13px; overflow-x: auto;">
+<pre>
+1. ผู้ใช้กดปุ่ม "แก้ไข" ในแถวสินค้า
+   └── เปิด ProductFormModal (โหมดแก้ไข, เติมข้อมูลเดิม)
+
+2. ผู้ใช้แก้ไขข้อมูล → กดปุ่ม "บันทึก"
+   └── Client-side Validation → PUT /api/products/:id
+
+3. Backend: ตรวจสอบ product มีอยู่
+   ├── ✗ ไม่มี → 404 Not Found
+   └── ✓ มี → ตรวจ SKU ซ้ำ (ถ้าเปลี่ยน)
+       ├── ✗ ซ้ำ → 409 Conflict
+       └── ✓ ไม่ซ้ำ → Dynamic UPDATE เฉพาะ field ที่ส่งมา
+
+4. Response: 200 { success: true, data: Product, message: "อัปเดตสินค้าสำเร็จ" }
+   └── Frontend: ปิด modal → แสดง notification → refresh
+</pre>
+        </div>
+
+        <h3 style="margin-top: 25px;">7.4 การลบสินค้า (Delete Product)</h3>
+        <div style="background: #fafafa; border: 1px solid #ddd; border-radius: 8px; padding: 20px; font-family: monospace; font-size: 13px; overflow-x: auto;">
+<pre>
+1. ผู้ใช้กดปุ่ม "ลบ" → เปิด Confirm Dialog (แสดงชื่อสินค้า)
+
+2. ผู้ใช้กด "ลบ" (ยืนยัน)
+   └── DELETE /api/products/:id
+
+3. Backend: ตรวจสอบ product มีอยู่
+   ├── ✗ ไม่มี → 404 Not Found
+   └── ✓ มี → DELETE FROM products WHERE id = @id
+
+4. Response: 200 { success: true, message: "ลบสินค้าสำเร็จ" }
+   └── Frontend: ปิด dialog → แสดง notification → refresh
+</pre>
+        </div>
+    </section>
+
+    <!-- Section 8: File Structure -->
+    <section style="background: white; border-radius: 8px; padding: 25px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h2>8. โครงสร้างไฟล์ที่เกี่ยวข้อง (File Structure)</h2>
+        <div style="background: #263238; color: #eee; padding: 20px; border-radius: 6px; font-family: monospace; font-size: 13px; overflow-x: auto;">
+<pre>
+warehouse_management_system/
+├── backend/
+│   └── src/
+│       ├── controllers/
+│       │   └── <span style="color: #80cbc4;">product.controller.ts</span>    ← จัดการ request/response
+│       ├── services/
+│       │   └── <span style="color: #80cbc4;">product.service.ts</span>       ← business logic + DB queries
+│       ├── routes/
+│       │   └── <span style="color: #80cbc4;">product.routes.ts</span>        ← กำหนด API endpoints
+│       ├── validators/
+│       │   └── <span style="color: #80cbc4;">product.validator.ts</span>     ← validation rules
+│       ├── types/
+│       │   ├── <span style="color: #ffcc80;">dto.ts</span>                   ← Data Transfer Objects
+│       │   ├── <span style="color: #ffcc80;">interfaces.ts</span>            ← Service interfaces + DB models
+│       │   └── <span style="color: #ffcc80;">responses.ts</span>             ← Response types
+│       ├── database/
+│       │   └── <span style="color: #ffcc80;">migrate.ts</span>               ← สร้างตาราง products
+│       └── middlewares/
+│           └── <span style="color: #ffcc80;">auth.middleware.ts</span>        ← JWT authentication
+│
+└── frontend/
+    └── src/
+        ├── pages/
+        │   └── <span style="color: #a5d6a7;">ProductListPage.tsx</span>       ← หน้ารายการสินค้า
+        ├── components/
+        │   ├── <span style="color: #a5d6a7;">ProductFormModal.tsx</span>      ← modal สร้าง/แก้ไข
+        │   └── <span style="color: #a5d6a7;">ProductDeleteConfirmDialog.tsx</span> ← dialog ยืนยันลบ
+        ├── services/
+        │   └── <span style="color: #a5d6a7;">productApi.ts</span>            ← API call functions
+        └── types/
+            └── <span style="color: #a5d6a7;">index.ts</span>                 ← Product types + payloads
+</pre>
+        </div>
+    </section>
+
+    <!-- Section 9: Security -->
+    <section style="background: white; border-radius: 8px; padding: 25px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h2>9. ความปลอดภัย (Security)</h2>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            <thead>
+                <tr style="background: #c62828; color: white;">
+                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">ระดับ</th>
+                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">มาตรการ</th>
+                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">รายละเอียด</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td style="padding: 8px; border: 1px solid #ddd;">Authentication</td><td style="padding: 8px; border: 1px solid #ddd;">JWT Token (Bearer)</td><td style="padding: 8px; border: 1px solid #ddd;">ทุก endpoint ต้อง login ก่อน, ตรวจสอบ token ผ่าน auth middleware</td></tr>
+                <tr style="background: #f9f9f9;"><td style="padding: 8px; border: 1px solid #ddd;">Input Validation</td><td style="padding: 8px; border: 1px solid #ddd;">express-validator</td><td style="padding: 8px; border: 1px solid #ddd;">ตรวจสอบทั้ง body, params, query ก่อนถึง controller</td></tr>
+                <tr><td style="padding: 8px; border: 1px solid #ddd;">SQL Injection</td><td style="padding: 8px; border: 1px solid #ddd;">Parameterized Queries</td><td style="padding: 8px; border: 1px solid #ddd;">ใช้ @params แทน string concatenation ทุก query</td></tr>
+                <tr style="background: #f9f9f9;"><td style="padding: 8px; border: 1px solid #ddd;">Data Integrity</td><td style="padding: 8px; border: 1px solid #ddd;">DB Constraints</td><td style="padding: 8px; border: 1px solid #ddd;">CHECK constraints, UNIQUE SKU, NOT NULL ในระดับ database</td></tr>
+                <tr><td style="padding: 8px; border: 1px solid #ddd;">Client-side</td><td style="padding: 8px; border: 1px solid #ddd;">Double Validation</td><td style="padding: 8px; border: 1px solid #ddd;">Frontend ตรวจสอบข้อมูลก่อนส่ง เพื่อ UX ที่ดี (ไม่แทนที่ server-side)</td></tr>
+                <tr style="background: #f9f9f9;"><td style="padding: 8px; border: 1px solid #ddd;">Route Protection</td><td style="padding: 8px; border: 1px solid #ddd;">ProtectedRoute component</td><td style="padding: 8px; border: 1px solid #ddd;">Frontend redirect ไป login หากไม่มี token</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- Section 10: Error Handling -->
+    <section style="background: white; border-radius: 8px; padding: 25px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h2>10. การจัดการ Error (Error Handling)</h2>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            <thead>
+                <tr style="background: #e65100; color: white;">
+                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">HTTP Status</th>
+                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Code</th>
+                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">สาเหตุ</th>
+                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">ตัวอย่างข้อความ</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td style="padding: 8px; border: 1px solid #ddd;">400</td><td style="padding: 8px; border: 1px solid #ddd;">VALIDATION_ERROR</td><td style="padding: 8px; border: 1px solid #ddd;">ข้อมูลไม่ผ่าน validation</td><td style="padding: 8px; border: 1px solid #ddd;">"ชื่อสินค้าต้องไม่ว่าง", "SKU ต้องมีความยาว 1-50 ตัวอักษร"</td></tr>
+                <tr style="background: #f9f9f9;"><td style="padding: 8px; border: 1px solid #ddd;">401</td><td style="padding: 8px; border: 1px solid #ddd;">UNAUTHORIZED</td><td style="padding: 8px; border: 1px solid #ddd;">ไม่มี/token ไม่ถูกต้อง</td><td style="padding: 8px; border: 1px solid #ddd;">"Token is missing", "Token is invalid or expired"</td></tr>
+                <tr><td style="padding: 8px; border: 1px solid #ddd;">404</td><td style="padding: 8px; border: 1px solid #ddd;">NOT_FOUND</td><td style="padding: 8px; border: 1px solid #ddd;">ไม่พบสินค้า</td><td style="padding: 8px; border: 1px solid #ddd;">"ไม่พบสินค้า"</td></tr>
+                <tr style="background: #f9f9f9;"><td style="padding: 8px; border: 1px solid #ddd;">409</td><td style="padding: 8px; border: 1px solid #ddd;">CONFLICT</td><td style="padding: 8px; border: 1px solid #ddd;">SKU ซ้ำ</td><td style="padding: 8px; border: 1px solid #ddd;">"SKU นี้มีอยู่ในระบบแล้ว"</td></tr>
+                <tr><td style="padding: 8px; border: 1px solid #ddd;">500</td><td style="padding: 8px; border: 1px solid #ddd;">INTERNAL_ERROR</td><td style="padding: 8px; border: 1px solid #ddd;">ข้อผิดพลาดภายใน</td><td style="padding: 8px; border: 1px solid #ddd;">"Internal Server Error"</td></tr>
+            </tbody>
+        </table>
+        <div style="background: #fff8e1; border-left: 4px solid #ffc107; padding: 15px; border-radius: 4px; margin-top: 15px;">
+            <strong>Error Response Format:</strong>
+            <pre style="margin-top: 10px; font-size: 13px;">{ "success": false, "error": { "code": "ERROR_CODE", "message": "ข้อความ", "details": [{ "field": "เหตุผล" }] } }</pre>
+        </div>
+    </section>
+
+    <!-- Section 11: Tech Stack -->
+    <section style="background: white; border-radius: 8px; padding: 25px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h2>11. เทคโนโลยีที่ใช้ (Tech Stack)</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div style="background: #e3f2fd; padding: 15px; border-radius: 6px;">
+                <h4 style="color: #1565c0; margin-bottom: 10px;">🔧 Backend</h4>
+                <ul style="padding-left: 20px; margin: 0;">
+                    <li>Node.js + TypeScript</li>
+                    <li>Express.js (Framework)</li>
+                    <li>express-validator (Validation)</li>
+                    <li>mssql (Database Driver)</li>
+                    <li>Microsoft SQL Server (Database)</li>
+                    <li>JWT (Authentication)</li>
+                    <li>Jest + Supertest (Testing)</li>
+                </ul>
+            </div>
+            <div style="background: #e8f5e9; padding: 15px; border-radius: 6px;">
+                <h4 style="color: #2e7d32; margin-bottom: 10px;">🎨 Frontend</h4>
+                <ul style="padding-left: 20px; margin: 0;">
+                    <li>React 18+ (UI Library)</li>
+                    <li>TypeScript</li>
+                    <li>Vite (Build Tool)</li>
+                    <li>Tailwind CSS (Styling)</li>
+                    <li>Axios (HTTP Client)</li>
+                    <li>React Router (Navigation)</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 12: Summary -->
+    <section style="background: linear-gradient(135deg, #1a237e, #3f51b5); border-radius: 8px; padding: 25px; margin-bottom: 20px; color: white;">
+        <h2 style="color: white; border-bottom-color: rgba(255,255,255,0.3);">12. สรุป (Summary)</h2>
+        <p style="margin-top: 15px; font-size: 16px;">
+            ระบบ Product Module ถูกออกแบบตามหลัก <strong>Separation of Concerns</strong> โดยแยกความรับผิดชอบอย่างชัดเจน:
+        </p>
+        <ul style="padding-left: 30px; margin: 15px 0;">
+            <li><strong>Routes:</strong> กำหนดเส้นทาง + middleware chain</li>
+            <li><strong>Validators:</strong> ตรวจสอบความถูกต้องของข้อมูลนำเข้า</li>
+            <li><strong>Controllers:</strong> จัดการ HTTP request/response</li>
+            <li><strong>Services:</strong> business logic + database operations</li>
+            <li><strong>Frontend:</strong> UI components + API integration</li>
+        </ul>
+        <p style="margin-top: 15px;">
+            ระบบรองรับการทำงาน CRUD ครบวงจร พร้อม pagination, search, validation ทั้ง client-side และ server-side,
+            error handling ที่ครอบคลุม, และการรักษาความปลอดภัยผ่าน JWT authentication
+        </p>
+    </section>
+
+    <footer style="text-align: center; color: #999; padding: 20px; font-size: 13px;">
+        <p>Generated for Warehouse Management System | Product Module Report</p>
+        <p>Last updated: August 2026</p>
+    </footer>
+</div>
+</body>
+</html>
