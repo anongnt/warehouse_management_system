@@ -45,6 +45,7 @@ export interface CreateProductDto {
   quantity: number;      // integer, 0-999999
   unitPrice: number;     // decimal, 0-999999999.99, max 2 decimals
   description?: string;  // 0-1000 chars
+  imageUrl?: string;     // URL path to uploaded image
 }
 
 // Update Product DTO (all fields optional)
@@ -55,6 +56,7 @@ export interface UpdateProductDto {
   quantity?: number;
   unitPrice?: number;
   description?: string;
+  imageUrl?: string | null;
   status?: 'active' | 'inactive';
 }
 

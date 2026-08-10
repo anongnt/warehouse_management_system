@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
 import dotenv from 'dotenv';
 import routes from './routes';
 import { errorHandler } from './middlewares/error.middleware';
@@ -14,6 +15,9 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json());
+
+// Serve uploaded files as static
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Health check
 app.get('/api/health', (req, res) => {

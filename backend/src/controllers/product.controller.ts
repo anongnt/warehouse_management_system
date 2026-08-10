@@ -89,7 +89,14 @@ export class ProductController {
       }
 
       const { name, sku, category, quantity, unitPrice, description } = req.body;
-      const product = await productService.create({ name, sku, category, quantity, unitPrice, description });
+
+      // Handle uploaded image
+      let imageUrl: string | undefined;
+      if (req.file) {
+        imageUrl = `/uploads/products/${req.file.filename}`;
+      }
+
+      const product = await productService.create({ name, sku, category, quantity: parseInt(quantity), unitPrice: parseFloat(unitPrice), description, imageUrl });
 
       res.status(201).json({
         success: true,
@@ -118,7 +125,21 @@ export class ProductController {
       }
 
       const { id } = req.params;
-      const updateData = req.body;
+      const updateData = { ...req.body };
+
+      // Handle uploaded image
+      if (req.file) {
+        updateData.imageUrl = `/uploads/products/${req.file.filename}`;
+      }
+
+      // Parse numeric fields if they come as strings (from FormData)
+      if (updateData.quantity !== undefined) {
+        updateData.quantity = parseInt(updateData.quantity);
+      }
+      if (updateData.unitPrice !== undefined) {
+        updateData.unitPrice = parseFloat(updateData.unitPrice);
+      }
+
       const product = await productService.update(id, updateData);
 
       res.status(200).json({

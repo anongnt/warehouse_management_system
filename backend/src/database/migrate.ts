@@ -61,6 +61,7 @@ BEGIN
         quantity INT NOT NULL DEFAULT 0 CHECK (quantity >= 0 AND quantity <= 999999),
         unit_price DECIMAL(12, 2) NOT NULL DEFAULT 0 CHECK (unit_price >= 0 AND unit_price <= 999999999.99),
         description NVARCHAR(1000) NULL,
+        image_url NVARCHAR(500) NULL,
         status NVARCHAR(10) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
         created_at DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
         updated_at DATETIME2 NOT NULL DEFAULT GETUTCDATE()
@@ -75,7 +76,14 @@ BEGIN
     PRINT 'Products table created successfully';
 END
 ELSE
-    PRINT 'Products table already exists';
+BEGIN
+    -- Add image_url column if not exists
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('products') AND name = 'image_url')
+    BEGIN
+        ALTER TABLE products ADD image_url NVARCHAR(500) NULL;
+        PRINT 'Added image_url column to products table';
+    END
+END;
 `;
 
 async function migrate() {

@@ -56,6 +56,7 @@ export interface Product {
   quantity: number;
   unitPrice: number;
   description: string | null;
+  imageUrl: string | null;
   status: 'active' | 'inactive';
   createdAt: string;
   updatedAt: string;
@@ -68,6 +69,7 @@ export interface CreateProductPayload {
   quantity: number;
   unitPrice: number;
   description?: string;
+  image?: File;
 }
 
 export interface UpdateProductPayload {
@@ -77,6 +79,7 @@ export interface UpdateProductPayload {
   quantity?: number;
   unitPrice?: number;
   description?: string;
+  image?: File;
   status?: 'active' | 'inactive';
 }
 

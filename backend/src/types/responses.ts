@@ -60,6 +60,7 @@ export interface ProductResponse {
   quantity: number;
   unitPrice: number;
   description: string | null;
+  imageUrl: string | null;
   status: 'active' | 'inactive';
   createdAt: Date;
   updatedAt: Date;

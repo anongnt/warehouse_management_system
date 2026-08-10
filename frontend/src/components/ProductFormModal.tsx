@@ -1,4 +1,4 @@
-import { useState, FormEvent, useEffect } from 'react';
+import { useState, FormEvent, useEffect, useRef } from 'react';
 import { Product, CreateProductPayload, UpdateProductPayload } from '../types';
 import { createProduct, updateProduct } from '../services/productApi';
 import { AxiosError } from 'axios';
@@ -33,9 +33,12 @@ export default function ProductFormModal({ product, isOpen, onClose, onSuccess }
   const [unitPrice, setUnitPrice] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<'active' | 'inactive'>('active');
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (product) {
@@ -46,6 +49,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSuccess }
       setUnitPrice(String(product.unitPrice));
       setDescription(product.description || '');
       setStatus(product.status);
+      setImagePreview(product.imageUrl || null);
     } else {
       setName('');
       setSku('');
@@ -54,12 +58,45 @@ export default function ProductFormModal({ product, isOpen, onClose, onSuccess }
       setUnitPrice('');
       setDescription('');
       setStatus('active');
+      setImagePreview(null);
     }
+    setImageFile(null);
     setError('');
     setFieldErrors({});
   }, [product, isOpen]);
 
   if (!isOpen) return null;
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        setFieldErrors(prev => ({ ...prev, image: 'อนุญาตเฉพาะไฟล์รูปภาพ (JPEG, PNG, GIF, WebP) เท่านั้น' }));
+        return;
+      }
+      // Validate file size (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setFieldErrors(prev => ({ ...prev, image: 'ขนาดไฟล์ต้องไม่เกิน 5MB' }));
+        return;
+      }
+      setFieldErrors(prev => {
+        const { image, ...rest } = prev;
+        return rest;
+      });
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const validate = (): boolean => {
     const errors: Record<string, string> = {};
@@ -117,6 +154,9 @@ export default function ProductFormModal({ product, isOpen, onClose, onSuccess }
           description: description || undefined,
           status,
         };
+        if (imageFile) {
+          data.image = imageFile;
+        }
         await updateProduct(product.id, data);
       } else {
         const data: CreateProductPayload = {
@@ -127,6 +167,9 @@ export default function ProductFormModal({ product, isOpen, onClose, onSuccess }
           unitPrice: parseFloat(unitPrice),
           description: description || undefined,
         };
+        if (imageFile) {
+          data.image = imageFile;
+        }
         await createProduct(data);
       }
       onSuccess();
@@ -218,6 +261,57 @@ export default function ProductFormModal({ product, isOpen, onClose, onSuccess }
               />
               {fieldErrors.unitPrice && <p className="mt-1 text-xs text-red-600">{fieldErrors.unitPrice}</p>}
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">รูปภาพสินค้า</label>
+            <div className="mt-1">
+              {imagePreview ? (
+                <div className="relative inline-block">
+                  <img
+                    src={imagePreview}
+                    alt="ตัวอย่างรูปสินค้า"
+                    className="w-32 h-32 object-cover rounded-md border border-gray-300"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                    aria-label="ลบรูปภาพ"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-md flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
+                >
+                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  <span className="text-xs text-gray-500 mt-1">เพิ่มรูปภาพ</span>
+                </div>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                onChange={handleImageChange}
+                className="hidden"
+              />
+              {imagePreview && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+                >
+                  เปลี่ยนรูปภาพ
+                </button>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-gray-500">รองรับไฟล์ JPEG, PNG, GIF, WebP ขนาดไม่เกิน 5MB</p>
+            {fieldErrors.image && <p className="mt-1 text-xs text-red-600">{fieldErrors.image}</p>}
           </div>
 
           <div>

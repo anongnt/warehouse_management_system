@@ -26,12 +26,41 @@ export async function getProductById(id: string) {
 }
 
 export async function createProduct(data: CreateProductPayload) {
-  const response = await api.post<ApiResponse<Product>>('/products', data);
+  const formData = new FormData();
+  formData.append('name', data.name);
+  formData.append('sku', data.sku);
+  formData.append('category', data.category);
+  formData.append('quantity', String(data.quantity));
+  formData.append('unitPrice', String(data.unitPrice));
+  if (data.description) {
+    formData.append('description', data.description);
+  }
+  if (data.image) {
+    formData.append('image', data.image);
+  }
+
+  const response = await api.post<ApiResponse<Product>>('/products', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
   return response.data;
 }
 
 export async function updateProduct(id: string, data: UpdateProductPayload) {
-  const response = await api.put<ApiResponse<Product>>(`/products/${id}`, data);
+  const formData = new FormData();
+  if (data.name !== undefined) formData.append('name', data.name);
+  if (data.sku !== undefined) formData.append('sku', data.sku);
+  if (data.category !== undefined) formData.append('category', data.category);
+  if (data.quantity !== undefined) formData.append('quantity', String(data.quantity));
+  if (data.unitPrice !== undefined) formData.append('unitPrice', String(data.unitPrice));
+  if (data.description !== undefined) formData.append('description', data.description);
+  if (data.status !== undefined) formData.append('status', data.status);
+  if (data.image) {
+    formData.append('image', data.image);
+  }
+
+  const response = await api.put<ApiResponse<Product>>(`/products/${id}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
   return response.data;
 }
 

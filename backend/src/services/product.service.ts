@@ -10,6 +10,20 @@ import {
 } from '../types';
 import { NotFoundError, ConflictError } from '../utils/errors';
 
+// Category code mapping for SKU generation
+const CATEGORY_CODES: Record<string, string> = {
+  'อิเล็กทรอนิกส์': 'ELEC',
+  'อุปกรณ์สำนักงาน': 'OFFC',
+  'เครื่องมือช่าง': 'TOOL',
+  'วัสดุบรรจุภัณฑ์': 'PACK',
+  'อะไหล่และชิ้นส่วน': 'PART',
+  'เครื่องใช้ไฟฟ้า': 'APPL',
+  'สินค้าอุปโภคบริโภค': 'CONS',
+  'เคมีภัณฑ์': 'CHEM',
+  'วัตถุดิบ': 'RAWM',
+  'อื่นๆ': 'MISC',
+};
+
 export class ProductService implements IProductService {
   // Find all products with pagination and search
   async findAll(query: ProductQueryDto): Promise<PaginatedResponse<ProductResponse>> {
@@ -45,7 +59,7 @@ export class ProductService implements IProductService {
     dataRequest.input('limit', sql.Int, limit);
 
     const dataResult = await dataRequest.query<ProductModel>(
-      `SELECT id, name, sku, category, quantity, unit_price, description, status, created_at, updated_at
+      `SELECT id, name, sku, category, quantity, unit_price, description, image_url, status, created_at, updated_at
        FROM products ${whereClause}
        ORDER BY created_at DESC
        OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY`
@@ -68,7 +82,7 @@ export class ProductService implements IProductService {
     const result = await pool.request()
       .input('id', sql.UniqueIdentifier, id)
       .query<ProductModel>(
-        `SELECT id, name, sku, category, quantity, unit_price, description, status, created_at, updated_at
+        `SELECT id, name, sku, category, quantity, unit_price, description, image_url, status, created_at, updated_at
          FROM products WHERE id = @id`
       );
 
@@ -99,11 +113,12 @@ export class ProductService implements IProductService {
       .input('quantity', sql.Int, data.quantity)
       .input('unit_price', sql.Decimal(12, 2), data.unitPrice)
       .input('description', sql.NVarChar, data.description || null)
+      .input('image_url', sql.NVarChar, data.imageUrl || null)
       .query<ProductModel>(
-        `INSERT INTO products (name, sku, category, quantity, unit_price, description, status, created_at, updated_at)
+        `INSERT INTO products (name, sku, category, quantity, unit_price, description, image_url, status, created_at, updated_at)
          OUTPUT INSERTED.id, INSERTED.name, INSERTED.sku, INSERTED.category, INSERTED.quantity,
-                INSERTED.unit_price, INSERTED.description, INSERTED.status, INSERTED.created_at, INSERTED.updated_at
-         VALUES (@name, @sku, @category, @quantity, @unit_price, @description, 'active', GETUTCDATE(), GETUTCDATE())`
+                INSERTED.unit_price, INSERTED.description, INSERTED.image_url, INSERTED.status, INSERTED.created_at, INSERTED.updated_at
+         VALUES (@name, @sku, @category, @quantity, @unit_price, @description, @image_url, 'active', GETUTCDATE(), GETUTCDATE())`
       );
 
     return this.toProductResponse(result.recordset[0]);
@@ -163,6 +178,10 @@ export class ProductService implements IProductService {
       updates.push('description = @description');
       request.input('description', sql.NVarChar, data.description || null);
     }
+    if (data.imageUrl !== undefined) {
+      updates.push('image_url = @image_url');
+      request.input('image_url', sql.NVarChar, data.imageUrl || null);
+    }
     if (data.status !== undefined) {
       updates.push('status = @status');
       request.input('status', sql.NVarChar, data.status);
@@ -177,7 +196,7 @@ export class ProductService implements IProductService {
     const result = await request.query<ProductModel>(
       `UPDATE products SET ${updates.join(', ')}
        OUTPUT INSERTED.id, INSERTED.name, INSERTED.sku, INSERTED.category, INSERTED.quantity,
-              INSERTED.unit_price, INSERTED.description, INSERTED.status, INSERTED.created_at, INSERTED.updated_at
+              INSERTED.unit_price, INSERTED.description, INSERTED.image_url, INSERTED.status, INSERTED.created_at, INSERTED.updated_at
        WHERE id = @id`
     );
 
@@ -212,9 +231,32 @@ export class ProductService implements IProductService {
       quantity: product.quantity,
       unitPrice: Number(product.unit_price),
       description: product.description,
+      imageUrl: product.image_url,
       status: product.status,
       createdAt: product.created_at,
       updatedAt: product.updated_at,
     };
+  }
+
+  // Generate auto SKU based on category
+  async generateSku(category: string): Promise<string> {
+    const pool = await getPool();
+    const code = CATEGORY_CODES[category] || 'MISC';
+
+    const result = await pool.request()
+      .input('prefix', sql.NVarChar, `${code}-%`)
+      .query<{ sku: string }>(`SELECT TOP 1 sku FROM products WHERE sku LIKE @prefix ORDER BY sku DESC`);
+
+    let nextNumber = 1;
+    if (result.recordset.length > 0) {
+      const lastSku = result.recordset[0].sku;
+      const parts = lastSku.split('-');
+      const lastNumber = parseInt(parts[parts.length - 1], 10);
+      if (!isNaN(lastNumber)) {
+        nextNumber = lastNumber + 1;
+      }
+    }
+
+    return `${code}-${String(nextNumber).padStart(5, '0')}`;
   }
 }

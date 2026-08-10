@@ -60,6 +60,7 @@ export interface ProductModel {
   quantity: number;
   unit_price: number;
   description: string | null;
+  image_url: string | null;
   status: 'active' | 'inactive';
   created_at: Date;
   updated_at: Date;
