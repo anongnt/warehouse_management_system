@@ -96,7 +96,7 @@ describe('Feature: warehouse-product-crud', () => {
             .set('Authorization', AUTH_HEADER);
 
           expect(getRes.status).toBe(200);
-          expect(getRes.body.data.name).toBe(payload.name.trim ? payload.name : payload.name);
+          expect(getRes.body.data.name).toBe(payload.name);
           expect(getRes.body.data.sku).toBe(sku);
           expect(getRes.body.data.status).toBe('active');
           expect(getRes.body.data.createdAt).toBeDefined();

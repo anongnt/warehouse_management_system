@@ -17,6 +17,9 @@ export const createProductValidation = [
     .trim()
     .notEmpty().withMessage('หมวดหมู่ต้องไม่ว่าง')
     .isLength({ min: 1, max: 100 }).withMessage('หมวดหมู่ต้องมีความยาว 1-100 ตัวอักษร'),
+  body('categoryId')
+    .optional({ values: 'null' })
+    .matches(UUID_REGEX).withMessage('รูปแบบ categoryId ไม่ถูกต้อง'),
   body('quantity')
     .notEmpty().withMessage('จำนวนต้องไม่ว่าง')
     .isInt({ min: 0, max: 999999 }).withMessage('จำนวนต้องเป็นจำนวนเต็ม 0-999,999'),
@@ -53,6 +56,9 @@ export const updateProductValidation = [
     .optional()
     .trim()
     .isLength({ min: 1, max: 100 }).withMessage('หมวดหมู่ต้องมีความยาว 1-100 ตัวอักษร'),
+  body('categoryId')
+    .optional({ values: 'null' })
+    .matches(UUID_REGEX).withMessage('รูปแบบ categoryId ไม่ถูกต้อง'),
   body('quantity')
     .optional()
     .isInt({ min: 0, max: 999999 }).withMessage('จำนวนต้องเป็นจำนวนเต็ม 0-999,999'),
@@ -107,7 +113,10 @@ export const updateProductStatusValidation = [
 // Validation: Generate SKU Preview
 export const generateSkuPreviewValidation = [
   body('category')
+    .optional()
     .trim()
-    .notEmpty().withMessage('หมวดหมู่ต้องไม่ว่าง')
     .isLength({ min: 1, max: 100 }).withMessage('หมวดหมู่ต้องมีความยาว 1-100 ตัวอักษร'),
+  body('categoryId')
+    .optional({ values: 'null' })
+    .matches(UUID_REGEX).withMessage('รูปแบบ categoryId ไม่ถูกต้อง'),
 ];

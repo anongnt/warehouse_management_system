@@ -66,6 +66,7 @@ export interface CreateProductPayload {
   name: string;
   sku?: string;  // optional - auto-generate if empty
   category: string;
+  categoryId?: string;
   quantity: number;
   unitPrice: number;
   description?: string;
@@ -76,6 +77,7 @@ export interface UpdateProductPayload {
   name?: string;
   sku?: string;
   category?: string;
+  categoryId?: string;
   quantity?: number;
   unitPrice?: number;
   description?: string;
@@ -94,4 +96,51 @@ export interface PaginatedProductResponse {
   total: number;
   page: number;
   totalPages: number;
+}
+
+// --- Category Types ---
+
+export interface Category {
+  id: string;
+  name: string;
+  code: string;
+  description: string | null;
+  parentId: string | null;
+  status: 'active' | 'inactive';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CategoryTree extends Category {
+  children: CategoryTree[];
+}
+
+export interface CategoryFlat extends Category {
+  level: number;
+}
+
+export interface CategoryDetail extends Category {
+  parent: Category | null;
+  children: Category[];
+  productCount: number;
+}
+
+export interface CreateCategoryPayload {
+  name: string;
+  code: string;
+  description?: string;
+  parentId?: string;
+}
+
+export interface UpdateCategoryPayload {
+  name?: string;
+  code?: string;
+  description?: string | null;
+  parentId?: string | null;
+}
+
+export interface CategoryQueryParams {
+  flat?: boolean;
+  search?: string;
+  status?: 'active' | 'inactive';
 }

@@ -1,5 +1,5 @@
-import { RegisterDto, LoginDto, ChangePasswordDto, UpdateUserDto, UserQueryDto, CreateProductDto, UpdateProductDto, ProductQueryDto } from './dto';
-import { UserResponse, PaginatedResponse, TokenPayload, LoginResponse, ProductResponse } from './responses';
+import { RegisterDto, LoginDto, ChangePasswordDto, UpdateUserDto, UserQueryDto, CreateProductDto, UpdateProductDto, ProductQueryDto, CreateCategoryDto, UpdateCategoryDto, CategoryQueryDto } from './dto';
+import { UserResponse, PaginatedResponse, TokenPayload, LoginResponse, ProductResponse, CategoryResponse, CategoryTreeResponse, CategoryFlatResponse, CategoryDetailResponse } from './responses';
 
 // Auth Service Interface
 export interface IAuthService {
@@ -57,6 +57,7 @@ export interface ProductModel {
   name: string;
   sku: string;
   category: string;
+  category_id: string | null;
   quantity: number;
   unit_price: number;
   description: string | null;
@@ -64,4 +65,26 @@ export interface ProductModel {
   status: 'active' | 'inactive';
   created_at: Date;
   updated_at: Date;
+}
+
+// Database Category Model (internal)
+export interface CategoryModel {
+  id: string;
+  name: string;
+  code: string;
+  description: string | null;
+  parent_id: string | null;
+  status: 'active' | 'inactive';
+  created_at: Date;
+  updated_at: Date;
+}
+
+// Category Service Interface
+export interface ICategoryService {
+  findAll(query: CategoryQueryDto): Promise<CategoryTreeResponse[] | CategoryFlatResponse[]>;
+  findById(id: string): Promise<CategoryDetailResponse>;
+  create(data: CreateCategoryDto): Promise<CategoryResponse>;
+  update(id: string, data: UpdateCategoryDto): Promise<CategoryResponse>;
+  updateStatus(id: string, status: 'active' | 'inactive'): Promise<CategoryResponse>;
+  delete(id: string): Promise<void>;
 }
