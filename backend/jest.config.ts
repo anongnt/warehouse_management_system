@@ -15,7 +15,6 @@ const config: Config = {
     '!src/server.ts',
   ],
   coverageDirectory: 'coverage',
-  setupFilesAfterFramework: [],
 };
 
 export default config;

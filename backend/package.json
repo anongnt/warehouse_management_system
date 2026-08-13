@@ -10,6 +10,7 @@
     "test": "jest --runInBand",
     "test:watch": "jest --watch",
     "migrate": "ts-node src/database/migrate.ts",
+    "migrate:categories": "ts-node src/database/migrations/001_create_categories.ts",
     "seed": "ts-node src/database/seed.ts"
   },
   "dependencies": {

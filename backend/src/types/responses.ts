@@ -65,3 +65,32 @@ export interface ProductResponse {
   createdAt: Date;
   updatedAt: Date;
 }
+
+// Category Response (basic)
+export interface CategoryResponse {
+  id: string;
+  name: string;
+  code: string;
+  description: string | null;
+  parentId: string | null;
+  status: 'active' | 'inactive';
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Category Tree Response (with nested children)
+export interface CategoryTreeResponse extends CategoryResponse {
+  children: CategoryTreeResponse[];
+}
+
+// Category Flat Response (with level info)
+export interface CategoryFlatResponse extends CategoryResponse {
+  level: number;
+}
+
+// Category Detail Response (with parent, children, productCount)
+export interface CategoryDetailResponse extends CategoryResponse {
+  parent: CategoryResponse | null;
+  children: CategoryResponse[];
+  productCount: number;
+}

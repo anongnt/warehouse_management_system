@@ -1,11 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import { validationResult } from 'express-validator';
-import { ProductService } from '../services/product.service';
+import { CategoryService } from '../services/category.service';
 
-const productService = new ProductService();
+const categoryService = new CategoryService();
 
-export class ProductController {
-  // GET /api/products
+export class CategoryController {
+  // GET /api/categories
   static async findAll(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const errors = validationResult(req);
@@ -21,11 +21,11 @@ export class ProductController {
         return;
       }
 
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 20;
+      const flat = req.query.flat === 'true';
       const search = req.query.search as string | undefined;
+      const status = req.query.status as 'active' | 'inactive' | undefined;
 
-      const result = await productService.findAll({ page, limit, search });
+      const result = await categoryService.findAll({ flat, search, status });
 
       res.status(200).json({
         success: true,
@@ -36,7 +36,7 @@ export class ProductController {
     }
   }
 
-  // GET /api/products/:id
+  // GET /api/categories/:id
   static async findById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const errors = validationResult(req);
@@ -53,26 +53,18 @@ export class ProductController {
       }
 
       const { id } = req.params;
-      const product = await productService.findById(id);
-
-      if (!product) {
-        res.status(404).json({
-          success: false,
-          error: { code: 'NOT_FOUND', message: 'ไม่พบสินค้า' },
-        });
-        return;
-      }
+      const category = await categoryService.findById(id);
 
       res.status(200).json({
         success: true,
-        data: product,
+        data: category,
       });
     } catch (error) {
       next(error);
     }
   }
 
-  // POST /api/products
+  // POST /api/categories
   static async create(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const errors = validationResult(req);
@@ -88,27 +80,20 @@ export class ProductController {
         return;
       }
 
-      const { name, sku, category, categoryId, quantity, unitPrice, description } = req.body;
-
-      // Handle uploaded image
-      let imageUrl: string | undefined;
-      if (req.file) {
-        imageUrl = `/uploads/products/${req.file.filename}`;
-      }
-
-      const product = await productService.create({ name, sku: sku || undefined, category, categoryId: categoryId || undefined, quantity: parseInt(quantity), unitPrice: parseFloat(unitPrice), description, imageUrl });
+      const { name, code, description, parentId } = req.body;
+      const category = await categoryService.create({ name, code, description, parentId });
 
       res.status(201).json({
         success: true,
-        data: product,
-        message: 'สร้างสินค้าสำเร็จ',
+        data: category,
+        message: 'สร้างหมวดหมู่สำเร็จ',
       });
     } catch (error) {
       next(error);
     }
   }
 
-  // PUT /api/products/:id
+  // PUT /api/categories/:id
   static async update(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const errors = validationResult(req);
@@ -125,62 +110,21 @@ export class ProductController {
       }
 
       const { id } = req.params;
-      const updateData = { ...req.body };
+      const updateData = req.body;
 
-      // Handle uploaded image
-      if (req.file) {
-        updateData.imageUrl = `/uploads/products/${req.file.filename}`;
-      }
-
-      // Parse numeric fields if they come as strings (from FormData)
-      if (updateData.quantity !== undefined) {
-        updateData.quantity = parseInt(updateData.quantity);
-      }
-      if (updateData.unitPrice !== undefined) {
-        updateData.unitPrice = parseFloat(updateData.unitPrice);
-      }
-
-      const product = await productService.update(id, updateData);
+      const category = await categoryService.update(id, updateData);
 
       res.status(200).json({
         success: true,
-        data: product,
-        message: 'อัปเดตสินค้าสำเร็จ',
+        data: category,
+        message: 'อัปเดตหมวดหมู่สำเร็จ',
       });
     } catch (error) {
       next(error);
     }
   }
 
-  // DELETE /api/products/:id
-  static async delete(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        res.status(400).json({
-          success: false,
-          error: {
-            code: 'VALIDATION_ERROR',
-            message: 'รูปแบบ ID ไม่ถูกต้อง',
-            details: errors.array().map(e => ({ [e.type === 'field' ? (e as any).path : 'general']: e.msg })),
-          },
-        });
-        return;
-      }
-
-      const { id } = req.params;
-      await productService.delete(id);
-
-      res.status(200).json({
-        success: true,
-        message: 'ลบสินค้าสำเร็จ',
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  // PATCH /api/products/:id/status
+  // PATCH /api/categories/:id/status
   static async updateStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const errors = validationResult(req);
@@ -199,11 +143,11 @@ export class ProductController {
       const { id } = req.params;
       const { status } = req.body;
 
-      const product = await productService.updateStatus(id, status);
+      const category = await categoryService.updateStatus(id, status);
 
       res.status(200).json({
         success: true,
-        data: product,
+        data: category,
         message: 'อัปเดตสถานะสำเร็จ',
       });
     } catch (error) {
@@ -211,8 +155,8 @@ export class ProductController {
     }
   }
 
-  // POST /api/products/generate
-  static async generatePreview(req: Request, res: Response, next: NextFunction): Promise<void> {
+  // DELETE /api/categories/:id
+  static async delete(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -220,24 +164,19 @@ export class ProductController {
           success: false,
           error: {
             code: 'VALIDATION_ERROR',
-            message: 'ข้อมูลไม่ถูกต้อง',
+            message: 'รูปแบบ ID ไม่ถูกต้อง',
             details: errors.array().map(e => ({ [e.type === 'field' ? (e as any).path : 'general']: e.msg })),
           },
         });
         return;
       }
 
-      const { category, categoryId } = req.body;
-      let sku: string;
-      if (categoryId) {
-        sku = await productService.generateSkuFromCategoryId(categoryId);
-      } else {
-        sku = await productService.generateSku(category || '');
-      }
+      const { id } = req.params;
+      await categoryService.delete(id);
 
       res.status(200).json({
         success: true,
-        data: { sku },
+        message: 'ลบหมวดหมู่สำเร็จ',
       });
     } catch (error) {
       next(error);

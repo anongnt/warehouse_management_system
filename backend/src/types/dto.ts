@@ -42,6 +42,7 @@ export interface CreateProductDto {
   name: string;          // 1-200 chars
   sku?: string;          // optional 1-50 chars, auto-generate if empty
   category: string;      // 1-100 chars
+  categoryId?: string;   // UUID, optional - references categories table
   quantity: number;      // integer, 0-999999
   unitPrice: number;     // decimal, 0-999999999.99, max 2 decimals
   description?: string;  // 0-1000 chars
@@ -53,6 +54,7 @@ export interface UpdateProductDto {
   name?: string;
   sku?: string;
   category?: string;
+  categoryId?: string | null;
   quantity?: number;
   unitPrice?: number;
   description?: string;
@@ -80,3 +82,28 @@ export const SKU_CATEGORY_CODES: Record<string, string> = {
   'วัตถุดิบ': 'RAWM',
   'อื่นๆ': 'MISC',
 };
+
+// --- Category DTOs ---
+
+// Create Category DTO
+export interface CreateCategoryDto {
+  name: string;          // 1-100 chars, Thai/English/numbers/spaces
+  code: string;          // 2-10 uppercase A-Z
+  description?: string;  // 0-500 chars
+  parentId?: string;     // UUID, optional
+}
+
+// Update Category DTO (all fields optional)
+export interface UpdateCategoryDto {
+  name?: string;
+  code?: string;
+  description?: string | null;
+  parentId?: string | null;
+}
+
+// Category Query DTO
+export interface CategoryQueryDto {
+  flat?: boolean;        // true = flat list, false/undefined = tree
+  search?: string;       // partial match on name, code (1-100 chars)
+  status?: 'active' | 'inactive';
+}

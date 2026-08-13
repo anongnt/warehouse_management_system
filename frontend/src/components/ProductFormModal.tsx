@@ -1,20 +1,8 @@
 import { useState, FormEvent, useEffect, useRef } from 'react';
-import { Product, CreateProductPayload, UpdateProductPayload } from '../types';
+import { Product, CreateProductPayload, UpdateProductPayload, CategoryFlat } from '../types';
 import { createProduct, updateProduct, generateSkuPreview } from '../services/productApi';
+import { getCategoriesFlat } from '../services/categoryApi';
 import { AxiosError } from 'axios';
-
-const PRODUCT_CATEGORIES = [
-  { value: 'อิเล็กทรอนิกส์', label: 'อิเล็กทรอนิกส์' },
-  { value: 'อุปกรณ์สำนักงาน', label: 'อุปกรณ์สำนักงาน' },
-  { value: 'เครื่องมือช่าง', label: 'เครื่องมือช่าง' },
-  { value: 'วัสดุบรรจุภัณฑ์', label: 'วัสดุบรรจุภัณฑ์' },
-  { value: 'อะไหล่และชิ้นส่วน', label: 'อะไหล่และชิ้นส่วน' },
-  { value: 'เครื่องใช้ไฟฟ้า', label: 'เครื่องใช้ไฟฟ้า' },
-  { value: 'สินค้าอุปโภคบริโภค', label: 'สินค้าอุปโภคบริโภค' },
-  { value: 'เคมีภัณฑ์', label: 'เคมีภัณฑ์' },
-  { value: 'วัตถุดิบ', label: 'วัตถุดิบ' },
-  { value: 'อื่นๆ', label: 'อื่นๆ' },
-];
 
 interface Props {
   product?: Product | null; // null = create mode, Product = edit mode
@@ -30,6 +18,8 @@ export default function ProductFormModal({ product, isOpen, onClose, onSuccess }
   const [sku, setSku] = useState('');
   const [autoGenerate, setAutoGenerate] = useState(true);
   const [category, setCategory] = useState('');
+  const [categoryId, setCategoryId] = useState('');
+  const [categoryOptions, setCategoryOptions] = useState<CategoryFlat[]>([]);
   const [quantity, setQuantity] = useState('');
   const [unitPrice, setUnitPrice] = useState('');
   const [description, setDescription] = useState('');
@@ -43,12 +33,22 @@ export default function ProductFormModal({ product, isOpen, onClose, onSuccess }
   const [isGenerating, setIsGenerating] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Load categories from API
+  useEffect(() => {
+    if (isOpen) {
+      getCategoriesFlat({ status: 'active' })
+        .then(res => setCategoryOptions((res.data || []) as CategoryFlat[]))
+        .catch(() => setCategoryOptions([]));
+    }
+  }, [isOpen]);
+
   useEffect(() => {
     if (product) {
       setName(product.name);
       setSku(product.sku);
       setAutoGenerate(false);
       setCategory(product.category);
+      setCategoryId((product as any).categoryId || '');
       setQuantity(String(product.quantity));
       setUnitPrice(String(product.unitPrice));
       setDescription(product.description || '');
@@ -59,6 +59,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSuccess }
       setSku('');
       setAutoGenerate(true);
       setCategory('');
+      setCategoryId('');
       setQuantity('');
       setUnitPrice('');
       setDescription('');
@@ -73,7 +74,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSuccess }
 
   // Generate SKU preview when category changes and auto-generate is on
   useEffect(() => {
-    if (!isOpen || isEditMode || !autoGenerate || !category) {
+    if (!isOpen || isEditMode || !autoGenerate || !categoryId) {
       setSkuPreview('');
       return;
     }
@@ -81,7 +82,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSuccess }
     let cancelled = false;
     setIsGenerating(true);
 
-    generateSkuPreview(category)
+    generateSkuPreview(category, categoryId)
       .then((res) => {
         if (!cancelled && res.data) {
           setSkuPreview(res.data.sku);
@@ -99,7 +100,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSuccess }
       });
 
     return () => { cancelled = true; };
-  }, [category, autoGenerate, isOpen, isEditMode]);
+  }, [categoryId, category, autoGenerate, isOpen, isEditMode]);
 
   if (!isOpen) return null;
 
@@ -147,7 +148,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSuccess }
         errors.sku = 'SKU ต้องประกอบด้วยตัวอักษร ตัวเลข - หรือ _ เท่านั้น';
       }
     }
-    if (!category.trim() || category.trim().length > 100) {
+    if (!category.trim()) {
       errors.category = 'กรุณาเลือกหมวดหมู่';
     }
 
@@ -187,6 +188,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSuccess }
           name: name.trim(),
           sku: sku.trim(),
           category: category.trim(),
+          categoryId: categoryId || undefined,
           quantity: parseInt(quantity),
           unitPrice: parseFloat(unitPrice),
           description: description || undefined,
@@ -201,6 +203,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSuccess }
           name: name.trim(),
           sku: autoGenerate ? undefined : sku.trim(),
           category: category.trim(),
+          categoryId: categoryId || undefined,
           quantity: parseInt(quantity),
           unitPrice: parseFloat(unitPrice),
           description: description || undefined,
@@ -247,13 +250,20 @@ export default function ProductFormModal({ product, isOpen, onClose, onSuccess }
           <div>
             <label className="block text-sm font-medium text-gray-700">หมวดหมู่ *</label>
             <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
+              value={categoryId}
+              onChange={(e) => {
+                const selectedId = e.target.value;
+                setCategoryId(selectedId);
+                const selected = categoryOptions.find(c => c.id === selectedId);
+                setCategory(selected ? selected.name : '');
+              }}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">-- เลือกหมวดหมู่ --</option>
-              {PRODUCT_CATEGORIES.map((cat) => (
-                <option key={cat.value} value={cat.value}>{cat.label}</option>
+              {categoryOptions.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {'─'.repeat(cat.level - 1)} {cat.name} ({cat.code})
+                </option>
               ))}
             </select>
             {fieldErrors.category && <p className="mt-1 text-xs text-red-600">{fieldErrors.category}</p>}
