@@ -1,6 +1,6 @@
 import { useState, FormEvent, useEffect, useRef } from 'react';
 import { Product, CreateProductPayload, UpdateProductPayload } from '../types';
-import { createProduct, updateProduct } from '../services/productApi';
+import { createProduct, updateProduct, generateSkuPreview } from '../services/productApi';
 import { AxiosError } from 'axios';
 
 const PRODUCT_CATEGORIES = [
@@ -28,6 +28,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSuccess }
 
   const [name, setName] = useState('');
   const [sku, setSku] = useState('');
+  const [autoGenerate, setAutoGenerate] = useState(true);
   const [category, setCategory] = useState('');
   const [quantity, setQuantity] = useState('');
   const [unitPrice, setUnitPrice] = useState('');
@@ -38,12 +39,15 @@ export default function ProductFormModal({ product, isOpen, onClose, onSuccess }
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [skuPreview, setSkuPreview] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (product) {
       setName(product.name);
       setSku(product.sku);
+      setAutoGenerate(false);
       setCategory(product.category);
       setQuantity(String(product.quantity));
       setUnitPrice(String(product.unitPrice));
@@ -53,17 +57,49 @@ export default function ProductFormModal({ product, isOpen, onClose, onSuccess }
     } else {
       setName('');
       setSku('');
+      setAutoGenerate(true);
       setCategory('');
       setQuantity('');
       setUnitPrice('');
       setDescription('');
       setStatus('active');
       setImagePreview(null);
+      setSkuPreview('');
     }
     setImageFile(null);
     setError('');
     setFieldErrors({});
   }, [product, isOpen]);
+
+  // Generate SKU preview when category changes and auto-generate is on
+  useEffect(() => {
+    if (!isOpen || isEditMode || !autoGenerate || !category) {
+      setSkuPreview('');
+      return;
+    }
+
+    let cancelled = false;
+    setIsGenerating(true);
+
+    generateSkuPreview(category)
+      .then((res) => {
+        if (!cancelled && res.data) {
+          setSkuPreview(res.data.sku);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSkuPreview('');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsGenerating(false);
+        }
+      });
+
+    return () => { cancelled = true; };
+  }, [category, autoGenerate, isOpen, isEditMode]);
 
   if (!isOpen) return null;
 
@@ -104,10 +140,12 @@ export default function ProductFormModal({ product, isOpen, onClose, onSuccess }
     if (!name.trim() || name.trim().length > 200) {
       errors.name = 'ชื่อสินค้าต้องมีความยาว 1-200 ตัวอักษร';
     }
-    if (!sku.trim() || sku.trim().length > 50) {
-      errors.sku = 'SKU ต้องมีความยาว 1-50 ตัวอักษร';
-    } else if (!/^[a-zA-Z0-9_-]+$/.test(sku.trim())) {
-      errors.sku = 'SKU ต้องประกอบด้วยตัวอักษร ตัวเลข - หรือ _ เท่านั้น';
+    if (!autoGenerate || isEditMode) {
+      if (!sku.trim() || sku.trim().length > 50) {
+        errors.sku = 'SKU ต้องมีความยาว 1-50 ตัวอักษร';
+      } else if (!/^[a-zA-Z0-9_-]+$/.test(sku.trim())) {
+        errors.sku = 'SKU ต้องประกอบด้วยตัวอักษร ตัวเลข - หรือ _ เท่านั้น';
+      }
     }
     if (!category.trim() || category.trim().length > 100) {
       errors.category = 'กรุณาเลือกหมวดหมู่';
@@ -161,7 +199,7 @@ export default function ProductFormModal({ product, isOpen, onClose, onSuccess }
       } else {
         const data: CreateProductPayload = {
           name: name.trim(),
-          sku: sku.trim(),
+          sku: autoGenerate ? undefined : sku.trim(),
           category: category.trim(),
           quantity: parseInt(quantity),
           unitPrice: parseFloat(unitPrice),
@@ -206,32 +244,61 @@ export default function ProductFormModal({ product, isOpen, onClose, onSuccess }
             {fieldErrors.name && <p className="mt-1 text-xs text-red-600">{fieldErrors.name}</p>}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">SKU *</label>
-              <input
-                type="text"
-                value={sku}
-                onChange={(e) => setSku(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                placeholder="เช่น PROD-001"
-              />
-              {fieldErrors.sku && <p className="mt-1 text-xs text-red-600">{fieldErrors.sku}</p>}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">หมวดหมู่ *</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">-- เลือกหมวดหมู่ --</option>
+              {PRODUCT_CATEGORIES.map((cat) => (
+                <option key={cat.value} value={cat.value}>{cat.label}</option>
+              ))}
+            </select>
+            {fieldErrors.category && <p className="mt-1 text-xs text-red-600">{fieldErrors.category}</p>}
+          </div>
+
+          {/* SKU field with auto-generate toggle */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-sm font-medium text-gray-700">
+                SKU {(!autoGenerate || isEditMode) && '*'}
+              </label>
+              {!isEditMode && (
+                <label className="flex items-center text-sm text-gray-600 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={autoGenerate}
+                    onChange={(e) => setAutoGenerate(e.target.checked)}
+                    className="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  สร้างอัตโนมัติ
+                </label>
+              )}
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">หมวดหมู่ *</label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">-- เลือกหมวดหมู่ --</option>
-                {PRODUCT_CATEGORIES.map((cat) => (
-                  <option key={cat.value} value={cat.value}>{cat.label}</option>
-                ))}
-              </select>
-              {fieldErrors.category && <p className="mt-1 text-xs text-red-600">{fieldErrors.category}</p>}
-            </div>
+            {autoGenerate && !isEditMode ? (
+              <div className="mt-1 px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-sm text-gray-600">
+                {isGenerating ? (
+                  <span className="text-gray-400">กำลังสร้าง...</span>
+                ) : skuPreview ? (
+                  <span className="font-mono text-blue-700">{skuPreview}</span>
+                ) : (
+                  <span className="text-gray-400">เลือกหมวดหมู่เพื่อสร้าง SKU อัตโนมัติ</span>
+                )}
+              </div>
+            ) : (
+              <>
+                <input
+                  type="text"
+                  value={sku}
+                  onChange={(e) => setSku(e.target.value)}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="เช่น ELEC-00001"
+                />
+                {fieldErrors.sku && <p className="mt-1 text-xs text-red-600">{fieldErrors.sku}</p>}
+              </>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">

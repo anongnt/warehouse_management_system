@@ -96,7 +96,7 @@ export class ProductController {
         imageUrl = `/uploads/products/${req.file.filename}`;
       }
 
-      const product = await productService.create({ name, sku, category, quantity: parseInt(quantity), unitPrice: parseFloat(unitPrice), description, imageUrl });
+      const product = await productService.create({ name, sku: sku || undefined, category, quantity: parseInt(quantity), unitPrice: parseFloat(unitPrice), description, imageUrl });
 
       res.status(201).json({
         success: true,
@@ -174,6 +174,65 @@ export class ProductController {
       res.status(200).json({
         success: true,
         message: 'ลบสินค้าสำเร็จ',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // PATCH /api/products/:id/status
+  static async updateStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'ข้อมูลไม่ถูกต้อง',
+            details: errors.array().map(e => ({ [e.type === 'field' ? (e as any).path : 'general']: e.msg })),
+          },
+        });
+        return;
+      }
+
+      const { id } = req.params;
+      const { status } = req.body;
+
+      const product = await productService.updateStatus(id, status);
+
+      res.status(200).json({
+        success: true,
+        data: product,
+        message: 'อัปเดตสถานะสำเร็จ',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // POST /api/products/generate
+  static async generatePreview(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        res.status(400).json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'ข้อมูลไม่ถูกต้อง',
+            details: errors.array().map(e => ({ [e.type === 'field' ? (e as any).path : 'general']: e.msg })),
+          },
+        });
+        return;
+      }
+
+      const { category } = req.body;
+      const sku = await productService.generateSku(category);
+
+      res.status(200).json({
+        success: true,
+        data: { sku },
       });
     } catch (error) {
       next(error);

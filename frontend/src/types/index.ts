@@ -64,7 +64,7 @@ export interface Product {
 
 export interface CreateProductPayload {
   name: string;
-  sku: string;
+  sku?: string;  // optional - auto-generate if empty
   category: string;
   quantity: number;
   unitPrice: number;
