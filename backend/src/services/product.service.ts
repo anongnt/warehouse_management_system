@@ -7,22 +7,9 @@ import {
   ProductQueryDto,
   ProductResponse,
   PaginatedResponse,
+  SKU_CATEGORY_CODES,
 } from '../types';
 import { NotFoundError, ConflictError } from '../utils/errors';
-
-// Category code mapping for SKU generation
-const CATEGORY_CODES: Record<string, string> = {
-  'อิเล็กทรอนิกส์': 'ELEC',
-  'อุปกรณ์สำนักงาน': 'OFFC',
-  'เครื่องมือช่าง': 'TOOL',
-  'วัสดุบรรจุภัณฑ์': 'PACK',
-  'อะไหล่และชิ้นส่วน': 'PART',
-  'เครื่องใช้ไฟฟ้า': 'APPL',
-  'สินค้าอุปโภคบริโภค': 'CONS',
-  'เคมีภัณฑ์': 'CHEM',
-  'วัตถุดิบ': 'RAWM',
-  'อื่นๆ': 'MISC',
-};
 
 export class ProductService implements IProductService {
   // Find all products with pagination and search
@@ -97,9 +84,15 @@ export class ProductService implements IProductService {
   async create(data: CreateProductDto): Promise<ProductResponse> {
     const pool = await getPool();
 
+    // Auto-generate SKU if not provided
+    let skuValue = data.sku;
+    if (!skuValue) {
+      skuValue = await this.generateSku(data.category);
+    }
+
     // Check SKU uniqueness
     const skuCheck = await pool.request()
-      .input('sku', sql.NVarChar, data.sku)
+      .input('sku', sql.NVarChar, skuValue)
       .query('SELECT id FROM products WHERE sku = @sku');
 
     if (skuCheck.recordset.length > 0) {
@@ -108,7 +101,7 @@ export class ProductService implements IProductService {
 
     const result = await pool.request()
       .input('name', sql.NVarChar, data.name)
-      .input('sku', sql.NVarChar, data.sku)
+      .input('sku', sql.NVarChar, skuValue)
       .input('category', sql.NVarChar, data.category)
       .input('quantity', sql.Int, data.quantity)
       .input('unit_price', sql.Decimal(12, 2), data.unitPrice)
@@ -203,6 +196,31 @@ export class ProductService implements IProductService {
     return this.toProductResponse(result.recordset[0]);
   }
 
+  // Update status only
+  async updateStatus(id: string, status: 'active' | 'inactive'): Promise<ProductResponse> {
+    const pool = await getPool();
+
+    const existing = await pool.request()
+      .input('id', sql.UniqueIdentifier, id)
+      .query('SELECT id FROM products WHERE id = @id');
+
+    if (existing.recordset.length === 0) {
+      throw new NotFoundError('ไม่พบสินค้า');
+    }
+
+    const result = await pool.request()
+      .input('id', sql.UniqueIdentifier, id)
+      .input('status', sql.NVarChar, status)
+      .query<ProductModel>(
+        `UPDATE products SET status = @status, updated_at = GETUTCDATE()
+         OUTPUT INSERTED.id, INSERTED.name, INSERTED.sku, INSERTED.category, INSERTED.quantity,
+                INSERTED.unit_price, INSERTED.description, INSERTED.image_url, INSERTED.status, INSERTED.created_at, INSERTED.updated_at
+         WHERE id = @id`
+      );
+
+    return this.toProductResponse(result.recordset[0]);
+  }
+
   // Delete product (permanent)
   async delete(id: string): Promise<void> {
     const pool = await getPool();
@@ -241,7 +259,7 @@ export class ProductService implements IProductService {
   // Generate auto SKU based on category
   async generateSku(category: string): Promise<string> {
     const pool = await getPool();
-    const code = CATEGORY_CODES[category] || 'MISC';
+    const code = SKU_CATEGORY_CODES[category] || 'MISC';
 
     const result = await pool.request()
       .input('prefix', sql.NVarChar, `${code}-%`)

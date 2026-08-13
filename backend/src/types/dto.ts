@@ -40,7 +40,7 @@ export interface UserQueryDto {
 // Create Product DTO
 export interface CreateProductDto {
   name: string;          // 1-200 chars
-  sku: string;           // 1-50 chars, alphanumeric + hyphens + underscores
+  sku?: string;          // optional 1-50 chars, auto-generate if empty
   category: string;      // 1-100 chars
   quantity: number;      // integer, 0-999999
   unitPrice: number;     // decimal, 0-999999999.99, max 2 decimals
@@ -66,3 +66,17 @@ export interface ProductQueryDto {
   limit: number;      // default: 20, min: 1, max: 100
   search?: string;    // partial match on name, sku, category (1-200 chars)
 }
+
+// SKU Category Code Mapping (Thai category name → 4-letter code)
+export const SKU_CATEGORY_CODES: Record<string, string> = {
+  'อิเล็กทรอนิกส์': 'ELEC',
+  'อุปกรณ์สำนักงาน': 'OFFC',
+  'เครื่องมือช่าง': 'TOOL',
+  'วัสดุบรรจุภัณฑ์': 'PACK',
+  'อะไหล่และชิ้นส่วน': 'PART',
+  'เครื่องใช้ไฟฟ้า': 'APPL',
+  'สินค้าอุปโภคบริโภค': 'CONS',
+  'เคมีภัณฑ์': 'CHEM',
+  'วัตถุดิบ': 'RAWM',
+  'อื่นๆ': 'MISC',
+};

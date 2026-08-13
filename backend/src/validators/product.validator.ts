@@ -9,8 +9,8 @@ export const createProductValidation = [
     .notEmpty().withMessage('ชื่อสินค้าต้องไม่ว่าง')
     .isLength({ min: 1, max: 200 }).withMessage('ชื่อสินค้าต้องมีความยาว 1-200 ตัวอักษร'),
   body('sku')
+    .optional({ values: 'falsy' })
     .trim()
-    .notEmpty().withMessage('SKU ต้องไม่ว่าง')
     .isLength({ min: 1, max: 50 }).withMessage('SKU ต้องมีความยาว 1-50 ตัวอักษร')
     .matches(/^[a-zA-Z0-9_-]+$/).withMessage('SKU ต้องประกอบด้วยตัวอักษร ตัวเลข เครื่องหมาย - หรือ _ เท่านั้น'),
   body('category')
@@ -93,4 +93,21 @@ export const productListValidation = [
 export const productIdValidation = [
   param('id')
     .matches(UUID_REGEX).withMessage('รูปแบบ ID ไม่ถูกต้อง'),
+];
+
+// Validation: Update Status
+export const updateProductStatusValidation = [
+  param('id')
+    .matches(UUID_REGEX).withMessage('รูปแบบ ID ไม่ถูกต้อง'),
+  body('status')
+    .notEmpty().withMessage('สถานะต้องไม่ว่าง')
+    .isIn(['active', 'inactive']).withMessage('สถานะต้องเป็น active หรือ inactive เท่านั้น'),
+];
+
+// Validation: Generate SKU Preview
+export const generateSkuPreviewValidation = [
+  body('category')
+    .trim()
+    .notEmpty().withMessage('หมวดหมู่ต้องไม่ว่าง')
+    .isLength({ min: 1, max: 100 }).withMessage('หมวดหมู่ต้องมีความยาว 1-100 ตัวอักษร'),
 ];

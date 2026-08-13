@@ -28,7 +28,9 @@ export async function getProductById(id: string) {
 export async function createProduct(data: CreateProductPayload) {
   const formData = new FormData();
   formData.append('name', data.name);
-  formData.append('sku', data.sku);
+  if (data.sku) {
+    formData.append('sku', data.sku);
+  }
   formData.append('category', data.category);
   formData.append('quantity', String(data.quantity));
   formData.append('unitPrice', String(data.unitPrice));
@@ -64,7 +66,17 @@ export async function updateProduct(id: string, data: UpdateProductPayload) {
   return response.data;
 }
 
+export async function updateProductStatus(id: string, status: 'active' | 'inactive') {
+  const response = await api.patch<ApiResponse<Product>>(`/products/${id}/status`, { status });
+  return response.data;
+}
+
 export async function deleteProduct(id: string) {
   const response = await api.delete<ApiResponse<undefined>>(`/products/${id}`);
+  return response.data;
+}
+
+export async function generateSkuPreview(category: string) {
+  const response = await api.post<ApiResponse<{ sku: string }>>('/products/generate', { category });
   return response.data;
 }

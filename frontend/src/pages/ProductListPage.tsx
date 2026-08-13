@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Product } from '../types';
-import { getProducts } from '../services/productApi';
+import { getProducts, updateProductStatus } from '../services/productApi';
 import ProductFormModal from '../components/ProductFormModal';
 import ProductDeleteConfirmDialog from '../components/ProductDeleteConfirmDialog';
 import { AxiosError } from 'axios';
@@ -89,6 +89,18 @@ export default function ProductListPage() {
     setDeletingProduct(null);
     setSuccessMessage('ลบสินค้าสำเร็จ');
     fetchProducts();
+  };
+
+  const handleToggleStatus = async (product: Product) => {
+    const newStatus = product.status === 'active' ? 'inactive' : 'active';
+    try {
+      await updateProductStatus(product.id, newStatus);
+      setSuccessMessage('อัปเดตสถานะสำเร็จ');
+      fetchProducts();
+    } catch (err) {
+      const axiosError = err as AxiosError<{ error?: { message: string } }>;
+      setError(axiosError.response?.data?.error?.message || 'ไม่สามารถอัปเดตสถานะได้');
+    }
   };
 
   const statusBadge = (status: string) => {
@@ -202,7 +214,15 @@ export default function ProductListPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{p.category}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{p.quantity.toLocaleString()}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatPrice(p.unitPrice)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{statusBadge(p.status)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <button
+                      onClick={() => handleToggleStatus(p)}
+                      className="focus:outline-none"
+                      title={p.status === 'active' ? 'คลิกเพื่อปิดใช้งาน' : 'คลิกเพื่อเปิดใช้งาน'}
+                    >
+                      {statusBadge(p.status)}
+                    </button>
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{formatDate(p.createdAt)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm space-x-2">
                     <button
