@@ -25,6 +25,9 @@ export default function Layout() {
               <Link to="/categories" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
                 หมวดหมู่
               </Link>
+              <Link to="/reports" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
+                รายงาน
+              </Link>
               {user?.role === 'admin' && (
                 <Link to="/users" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
                   จัดการผู้ใช้

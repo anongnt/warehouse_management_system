@@ -9,6 +9,7 @@ import UserListPage from './pages/UserListPage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
 import ProductListPage from './pages/ProductListPage';
 import CategoryListPage from './pages/CategoryListPage';
+import ReportPage from './pages/ReportPage';
 
 export default function App() {
   const { isAuthenticated } = useAuth();
@@ -31,6 +32,7 @@ export default function App() {
         <Route path="/change-password" element={<ChangePasswordPage />} />
         <Route path="/products" element={<ProductListPage />} />
         <Route path="/categories" element={<CategoryListPage />} />
+        <Route path="/reports" element={<ReportPage />} />
         <Route
           path="/users"
           element={
