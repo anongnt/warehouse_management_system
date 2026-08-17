@@ -1,33 +1,51 @@
-import { useAuth } from '../contexts/AuthContext';
+import { useDashboard } from '../hooks/useDashboard';
+import KpiCards from '../components/dashboard/KpiCards';
+import CategoryChart from '../components/dashboard/CategoryChart';
+import LowStockTable from '../components/dashboard/LowStockTable';
+import RecentProductsTable from '../components/dashboard/RecentProductsTable';
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { summary, categories, lowStockProducts, recentProducts, loading, errors, retry } =
+    useDashboard();
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-4">
-        สวัสดี, {user?.firstName} {user?.lastName}
-      </h1>
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-700 mb-2">Warehouse Management System</h2>
-        <p className="text-gray-600">
-          ยินดีต้อนรับเข้าสู่ระบบจัดการคลังสินค้า
-        </p>
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-blue-50 rounded-lg p-4">
-            <p className="text-sm text-blue-600 font-medium">บทบาท</p>
-            <p className="text-lg font-bold text-blue-900">{user?.role === 'admin' ? 'Admin' : 'User'}</p>
-          </div>
-          <div className="bg-green-50 rounded-lg p-4">
-            <p className="text-sm text-green-600 font-medium">สถานะ</p>
-            <p className="text-lg font-bold text-green-900">ใช้งาน</p>
-          </div>
-          <div className="bg-purple-50 rounded-lg p-4">
-            <p className="text-sm text-purple-600 font-medium">อีเมล</p>
-            <p className="text-lg font-bold text-purple-900">{user?.email}</p>
-          </div>
-        </div>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-gray-900">แดชบอร์ด</h1>
+
+      {/* KPI Cards */}
+      <KpiCards
+        data={summary}
+        loading={loading.summary}
+        error={errors.summary}
+        onRetry={() => retry('summary')}
+      />
+
+      {/* Charts and Tables */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Category Distribution Chart */}
+        <CategoryChart
+          data={categories}
+          loading={loading.categories}
+          error={errors.categories}
+          onRetry={() => retry('categories')}
+        />
+
+        {/* Low Stock Table */}
+        <LowStockTable
+          data={lowStockProducts}
+          loading={loading.lowStock}
+          error={errors.lowStock}
+          onRetry={() => retry('lowStock')}
+        />
       </div>
+
+      {/* Recent Products Table */}
+      <RecentProductsTable
+        data={recentProducts}
+        loading={loading.recent}
+        error={errors.recent}
+        onRetry={() => retry('recent')}
+      />
     </div>
   );
 }

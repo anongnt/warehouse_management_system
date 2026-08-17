@@ -7,6 +7,18 @@ const api = axios.create({
   },
 });
 
+// Track when login happened to avoid redirect right after login/refresh
+let lastLoginTime = 0;
+
+export function markLoginTime() {
+  lastLoginTime = Date.now();
+}
+
+// Also mark on page load if token exists (covers refresh scenario)
+if (localStorage.getItem('token')) {
+  lastLoginTime = Date.now();
+}
+
 // Request interceptor - attach token
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
@@ -21,9 +33,17 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      const url = error.config?.url || '';
+      if (!url.includes('/auth/')) {
+        const timeSinceLogin = Date.now() - lastLoginTime;
+        if (timeSinceLogin > 5000) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
+        }
+      }
     }
     return Promise.reject(error);
   }

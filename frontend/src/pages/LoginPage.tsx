@@ -19,7 +19,7 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      navigate('/');
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       const axiosError = err as AxiosError<{ error?: { message: string; details?: Record<string, string>[] } }>;
       if (axiosError.response?.data?.error) {

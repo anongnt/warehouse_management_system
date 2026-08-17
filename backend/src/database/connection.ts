@@ -14,8 +14,8 @@ const config: sql.config = {
     trustServerCertificate: true,
   },
   pool: {
-    max: 10,
-    min: 0,
+    max: 30,
+    min: 5,
     idleTimeoutMillis: 30000,
   },
 };

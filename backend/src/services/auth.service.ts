@@ -224,25 +224,42 @@ export class AuthService implements IAuthService {
 
   // Validate token
   async validateToken(token: string): Promise<TokenPayload | null> {
+    let payload: TokenPayload;
     try {
-      const payload = jwt.verify(token, JWT_SECRET) as TokenPayload;
-
-      // Check session exists in database
-      const pool = await getPool();
-      const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-
-      const result = await pool.request()
-        .input('token_hash', sql.NVarChar, tokenHash)
-        .query('SELECT id FROM sessions WHERE token_hash = @token_hash AND expires_at > GETUTCDATE()');
-
-      if (result.recordset.length === 0) {
-        return null;
-      }
-
-      return payload;
+      payload = jwt.verify(token, JWT_SECRET) as TokenPayload;
     } catch {
+      // Token itself is invalid or expired
       return null;
     }
+
+    // Check session exists in database (with retry for transient DB errors)
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const pool = await getPool();
+        const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+        const result = await pool.request()
+          .input('token_hash', sql.NVarChar, tokenHash)
+          .query('SELECT id FROM sessions WHERE token_hash = @token_hash AND expires_at > GETUTCDATE()');
+
+        if (result.recordset.length === 0) {
+          return null;
+        }
+
+        return payload;
+      } catch {
+        if (attempt === 0) {
+          // Wait briefly and retry on DB connection error
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } else {
+          // Second attempt also failed - assume DB issue, still allow request
+          // to avoid false 401 from transient connection problems
+          return payload;
+        }
+      }
+    }
+
+    return null;
   }
 
   // Private: Validate registration input

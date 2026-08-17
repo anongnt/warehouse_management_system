@@ -17,8 +17,8 @@ export default function App() {
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />} />
-      <Route path="/register" element={isAuthenticated ? <Navigate to="/" replace /> : <RegisterPage />} />
+      <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
+      <Route path="/register" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <RegisterPage />} />
 
       {/* Protected routes */}
       <Route
@@ -28,7 +28,7 @@ export default function App() {
           </ProtectedRoute>
         }
       >
-        <Route path="/" element={<DashboardPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/change-password" element={<ChangePasswordPage />} />
         <Route path="/products" element={<ProductListPage />} />
         <Route path="/categories" element={<CategoryListPage />} />
@@ -43,8 +43,8 @@ export default function App() {
         />
       </Route>
 
-      {/* Catch all */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* Catch all - redirect to dashboard */}
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 }
