@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
+import { markLoginTime } from '../services/api';
 import { User, AuthContextType, ApiResponse, LoginResponse } from '../types';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,6 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
+    markLoginTime();
     setToken(data.token);
     setUser(data.user);
   }, []);
