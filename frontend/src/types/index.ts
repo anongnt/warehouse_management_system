@@ -89,6 +89,7 @@ export interface ProductQueryParams {
   page?: number;
   limit?: number;
   search?: string;
+  status?: 'active' | 'inactive';
 }
 
 export interface PaginatedProductResponse {
