@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { ReportController } from '../controllers/report.controller';
+import { ExpenseSummaryController } from '../controllers/expense-summary.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 import {
   inventoryReportValidation,
@@ -7,6 +8,7 @@ import {
   lowStockReportValidation,
   stockValueReportValidation,
 } from '../validators/report.validator';
+import { expenseSummaryValidation } from '../validators/expense-summary.validator';
 
 const router = Router();
 
@@ -17,5 +19,6 @@ router.get('/inventory', inventoryReportValidation, ReportController.generateInv
 router.get('/category', categoryReportValidation, ReportController.generateCategoryReport);
 router.get('/low-stock', lowStockReportValidation, ReportController.generateLowStockReport);
 router.get('/stock-value', stockValueReportValidation, ReportController.generateStockValueReport);
+router.get('/expense-summary', expenseSummaryValidation, ExpenseSummaryController.getExpenseSummary);
 
 export default router;
