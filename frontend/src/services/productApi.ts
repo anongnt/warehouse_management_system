@@ -13,6 +13,7 @@ export async function getProducts(params: ProductQueryParams = {}) {
   if (params.page) queryParams.set('page', String(params.page));
   if (params.limit) queryParams.set('limit', String(params.limit));
   if (params.search) queryParams.set('search', params.search);
+  if (params.status) queryParams.set('status', params.status);
 
   const response = await api.get<ApiResponse<PaginatedProductResponse>>(
     `/products?${queryParams.toString()}`
