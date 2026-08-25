@@ -10,6 +10,11 @@ import ChangePasswordPage from './pages/ChangePasswordPage';
 import ProductListPage from './pages/ProductListPage';
 import CategoryListPage from './pages/CategoryListPage';
 import ExpenseSummaryPage from './pages/ExpenseSummaryPage';
+import StockBalancePage from './pages/StockBalancePage';
+import StockReceiptPage from './pages/StockReceiptPage';
+import StockIssuePage from './pages/StockIssuePage';
+import StockAdjustmentPage from './pages/StockAdjustmentPage';
+import StockMovementPage from './pages/StockMovementPage';
 
 export default function App() {
   const { isAuthenticated } = useAuth();
@@ -34,6 +39,21 @@ export default function App() {
         <Route path="/categories" element={<CategoryListPage />} />
         <Route path="/reports" element={<ExpenseSummaryPage />} />
         <Route path="/expense-summary" element={<ExpenseSummaryPage />} />
+
+        {/* Stock management */}
+        <Route path="/stock/balances" element={<StockBalancePage />} />
+        <Route path="/stock/receipts/new" element={<StockReceiptPage />} />
+        <Route path="/stock/issues/new" element={<StockIssuePage />} />
+        <Route path="/stock/movements" element={<StockMovementPage />} />
+        <Route
+          path="/stock/adjustments/new"
+          element={
+            <ProtectedRoute requiredRole="admin">
+              <StockAdjustmentPage />
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/users"
           element={

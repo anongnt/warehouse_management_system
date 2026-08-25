@@ -7,8 +7,15 @@ export default function Layout() {
   const location = useLocation();
 
   const handleLogout = async () => {
-    await logout();
-    navigate('/login');
+    const serverLogoutSucceeded = await logout();
+    // Requirement 3.3: on a failed logout the client token is still cleared,
+    // but the user is warned that the logout may be incomplete.
+    navigate('/login', {
+      replace: true,
+      state: serverLogoutSucceeded
+        ? undefined
+        : { warning: 'การออกจากระบบอาจไม่สมบูรณ์ กรุณาปิดเบราว์เซอร์เพื่อความปลอดภัย' },
+    });
   };
 
   const isActive = (path: string) => location.pathname === path;
@@ -42,6 +49,24 @@ export default function Layout() {
       ),
     },
     {
+      to: '/stock/balances',
+      label: 'สต็อก',
+      icon: (
+        <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+        </svg>
+      ),
+    },
+    {
+      to: '/stock/movements',
+      label: 'ประวัติสต็อก',
+      icon: (
+        <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+    },
+    {
       to: '/reports',
       label: 'รายงาน',
       icon: (
@@ -59,6 +84,15 @@ export default function Layout() {
       icon: (
         <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+      ),
+    },
+    {
+      to: '/stock/adjustments/new',
+      label: 'ปรับยอดสต็อก',
+      icon: (
+        <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
         </svg>
       ),
     },

@@ -83,6 +83,11 @@ export const SKU_CATEGORY_CODES: Record<string, string> = {
   'อื่นๆ': 'MISC',
 };
 
+// --- Stock DTOs ---
+// Stock DTOs, models and the constants LOW_STOCK_THRESHOLD_DEFAULT / STOCK_DOCUMENT_PREFIX
+// live in ./stock.types and are re-exported through the ./index barrel, so other modules
+// keep importing everything from '../types' as they do for the DTOs above.
+
 // --- Category DTOs ---
 
 // Create Category DTO

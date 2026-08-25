@@ -3,3 +3,4 @@ export { UserController } from './user.controller';
 export { ProductController } from './product.controller';
 export { CategoryController } from './category.controller';
 export { DashboardController } from './dashboard.controller';
+export { StockController } from './stock.controller';

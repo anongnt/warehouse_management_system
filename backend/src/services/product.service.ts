@@ -271,6 +271,18 @@ export class ProductService implements IProductService {
       throw new NotFoundError('ไม่พบสินค้า');
     }
 
+    // Products with stock movement history must stay for audit purposes
+    const movementCheck = await pool.request()
+      .input('id', sql.UniqueIdentifier, id)
+      .query<{ count: number }>('SELECT COUNT(*) as count FROM stock_movements WHERE product_id = @id');
+
+    const movementCount = movementCheck.recordset[0].count;
+    if (movementCount > 0) {
+      throw new ConflictError(
+        `ไม่สามารถลบสินค้าได้ เนื่องจากมีประวัติความเคลื่อนไหวสต็อกอยู่ ${movementCount} รายการ`
+      );
+    }
+
     await pool.request()
       .input('id', sql.UniqueIdentifier, id)
       .query('DELETE FROM products WHERE id = @id');

@@ -2,3 +2,4 @@ export { registerValidation, loginValidation, changePasswordValidation } from '.
 export { updateUserValidation, userListValidation } from './user.validator';
 export { createProductValidation, updateProductValidation, productListValidation, productIdValidation, updateProductStatusValidation, generateSkuPreviewValidation } from './product.validator';
 export { createCategoryValidation, updateCategoryValidation, categoryListValidation, categoryIdValidation, updateCategoryStatusValidation } from './category.validator';
+export { createReceiptValidation, createIssueValidation, createAdjustmentValidation, cancelDocumentValidation, stockBalanceListValidation, stockMovementListValidation, productIdParamValidation, documentIdValidation } from './stock.validator';

@@ -43,7 +43,12 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
+  /**
+   * Clears the client session. Resolves `true` when the server also
+   * invalidated the token, `false` when the API call failed and the
+   * logout may therefore be incomplete server-side (Requirement 3.3).
+   */
+  logout: () => Promise<boolean>;
 }
 
 // --- Product Types ---
@@ -175,3 +180,7 @@ export interface RecentProduct {
   status: 'active' | 'inactive';
   createdAt: string;
 }
+
+// --- Stock Management Types ---
+
+export * from './stock.types';

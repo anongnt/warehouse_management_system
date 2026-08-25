@@ -4,3 +4,4 @@ export * from './interfaces';
 export * from './report.types';
 export * from './dashboard.types';
 export * from './expense-summary.types';
+export * from './stock.types';
