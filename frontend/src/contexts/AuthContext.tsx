@@ -33,17 +33,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(data.user);
   }, []);
 
-  const logout = useCallback(async () => {
+  const logout = useCallback(async (): Promise<boolean> => {
+    let serverLogoutSucceeded = true;
     try {
       await api.post('/auth/logout');
     } catch {
-      // Even if logout API fails, clear local state
+      // Requirement 3.3: the client session is cleared regardless, but the
+      // caller is told the server-side logout may be incomplete.
+      serverLogoutSucceeded = false;
     } finally {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       setToken(null);
       setUser(null);
     }
+    return serverLogoutSucceeded;
   }, []);
 
   const value: AuthContextType = {
