@@ -1,7 +1,12 @@
 import { useState, FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { AxiosError } from 'axios';
+
+interface LoginLocationState {
+  message?: string;
+  warning?: string;
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -11,6 +16,13 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Notices handed over by other pages: RegisterPage success message and the
+  // incomplete-logout warning from Layout (Requirement 3.3).
+  const locationState = (location.state ?? {}) as LoginLocationState;
+  const [notice] = useState(locationState.message ?? '');
+  const [warning] = useState(locationState.warning ?? '');
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -51,6 +63,16 @@ export default function LoginPage() {
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          {notice && (
+            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded" role="status">
+              {notice}
+            </div>
+          )}
+          {warning && (
+            <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded" role="alert">
+              {warning}
+            </div>
+          )}
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded" role="alert">
               {error}
